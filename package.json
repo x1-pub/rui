@@ -1,0 +1,51 @@
+{
+  "name": "@x1.pub/rui",
+  "version": "0.0.8",
+  "description": "Rui is a TypeScript-based Node.js server-side framework",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "scripts": {
+    "build": "rollup -c",
+    "test": "node --loader ts-node/esm --test __test__/*.test.ts",
+    "lint": "standard src/**/*.ts",
+    "lint:fix": "standard --fix src/**/*.ts",
+    "prepare": "npm run build"
+  },
+  "repository": "x1-pub/rui",
+  "keywords": [
+    "node",
+    "http",
+    "application",
+    "framework",
+    "middleware",
+    "rui"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@types/node": "^18.19.119",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
+    "rollup": "^4.45.1",
+    "rollup-plugin-dts": "^6.2.1",
+    "standard": "^17.1.2",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.2"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "standard": {
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ]
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ]
+}
