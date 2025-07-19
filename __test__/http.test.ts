@@ -1,5 +1,5 @@
-const { HttpApp } = require('../dist/index.cjs')
-const assert = require('node:assert')
+import { HttpApp } from '../src/index.js'
+import assert from 'node:assert'
 
 const PORT = 3000;
 

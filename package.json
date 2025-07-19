@@ -4,11 +4,19 @@
   "description": "Rui is a TypeScript-based Node.js server-side framework",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    }
+  },
   "scripts": {
+    "dev": "NODE_OPTIONS=--no-warnings node --loader ts-node/esm dev.ts",
+    "test": "NODE_OPTIONS=--no-warnings node --loader ts-node/esm --test __test__/*.test.ts",
     "build": "rollup -c",
-    "test": "node --loader ts-node/esm --test __test__/*.test.ts",
-    "lint": "standard src/**/*.ts",
-    "lint:fix": "standard --fix src/**/*.ts",
+    "lint": "standard --fix src/**/*.ts",
     "prepare": "npm run build"
   },
   "repository": "x1-pub/rui",

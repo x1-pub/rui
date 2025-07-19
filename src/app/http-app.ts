@@ -1,6 +1,6 @@
 import http from 'node:http'
 
-import App from './app'
+import App from './base-app.js'
 
 type HttpServerListenParameters = Parameters<ReturnType<typeof http.createServer>['listen']>
 

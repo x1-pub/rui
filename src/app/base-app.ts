@@ -3,8 +3,8 @@ import https from 'node:https'
 import http2 from 'node:http2'
 import EventEmitter from 'node:events'
 
-import context from './context.js'
-import type { Context } from './context.js'
+import context from '../context/index.js'
+import type { Context } from '../context/index.js'
 
 type Middleware<T, D> = (ctx: Context<T, D>, next: () => Promise<void>) => Promise<void> | void;
 

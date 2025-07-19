@@ -7,21 +7,15 @@
     ],
     "rootDir": "./src",
     "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
     "moduleResolution": "Node",
+    "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    }
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "__est__/**/*.test.ts",
   ],
 }

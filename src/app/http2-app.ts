@@ -1,6 +1,6 @@
 import http2 from 'node:http2'
 
-import App from './app'
+import App from './base-app.js'
 
 type Http2ServerListenParameters = Parameters<ReturnType<typeof http2.createSecureServer>['listen']>
 

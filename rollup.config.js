@@ -1,12 +1,12 @@
-const commonjs = require('@rollup/plugin-commonjs');
-const resolve = require('@rollup/plugin-node-resolve');
-const typescript = require('@rollup/plugin-typescript');
-const { dts } = require('rollup-plugin-dts');
+import commonjs from '@rollup/plugin-commonjs';
+import resolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
+import { dts } from 'rollup-plugin-dts';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const external = ['node:http', 'node:https', 'node:http2', 'node:events', 'node:tls', 'node:url']
 
-module.exports = [
+export default [
   {
     input: 'src/index.ts',
     output: [

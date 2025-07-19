@@ -1,3 +1,8 @@
-export { default as HttpApp } from './http-app'
-export { default as HttpsApp } from './https-app'
-export { default as Http2App } from './http2-app'
+// export { default } from './app/http-app.js'
+import { default as HttpApp } from './app/http-app.js'
+
+export { HttpApp }
+export { default as HttpsApp } from './app/https-app.js'
+export { default as Http2App } from './app/http2-app.js'
+
+export default HttpApp
