@@ -1,0 +1,11 @@
+{
+  "watch": [
+    "src/**/*.ts",
+    "dev.ts"
+  ],
+  "ext": "ts,json",
+  "exec": "NODE_OPTIONS=--no-warnings node --loader ts-node/esm dev.ts",
+  "ignore": [
+    "node_modules"
+  ]
+}

@@ -16,6 +16,5 @@
   },
   "include": [
     "src/**/*.ts",
-    "__est__/**/*.test.ts",
   ],
 }

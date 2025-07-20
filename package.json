@@ -2,20 +2,41 @@
   "name": "@x1.pub/rui",
   "version": "0.0.8",
   "description": "Rui is a TypeScript-based Node.js server-side framework",
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "type": "module",
+  "types": "./http/index.d.ts",
+  "main": "./http/index.cjs",
+  "module": "./http/index.mjs",
   "exports": {
     ".": {
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs"
+      "types": "./http/index.d.ts",
+      "require": "./http/index.cjs",
+      "import": "./http/index.mjs"
+    },
+    "./http": {
+      "types": "./http/index.d.ts",
+      "require": "./http/index.cjs",
+      "import": "./http/index.mjs"
+    },
+    "./http2": {
+      "types": "./http2/index.d.ts",
+      "require": "./http2/index.cjs",
+      "import": "./http2/index.mjs"
+    },
+    "./http2s": {
+      "types": "./http2s/index.d.ts",
+      "require": "./http2s/index.cjs",
+      "import": "./http2s/index.mjs"
+    },
+    "./https": {
+      "types": "./https/index.d.ts",
+      "require": "./https/index.cjs",
+      "import": "./https/index.mjs"
     }
   },
   "scripts": {
-    "dev": "NODE_OPTIONS=--no-warnings node --loader ts-node/esm dev.ts",
+    "dev": "nodemon",
     "test": "NODE_OPTIONS=--no-warnings node --loader ts-node/esm --test __test__/*.test.ts",
-    "build": "rollup -c",
+    "build": "rm -rf dist & rollup -c",
     "lint": "standard --fix src/**/*.ts",
     "prepare": "npm run build"
   },
@@ -36,6 +57,7 @@
     "@types/node": "^18.19.119",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
+    "nodemon": "^3.1.10",
     "rollup": "^4.45.1",
     "rollup-plugin-dts": "^6.2.1",
     "standard": "^17.1.2",

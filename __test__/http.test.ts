@@ -1,40 +1,24 @@
-import { HttpApp } from '../src/index.js'
+import HttpApp from '../src/http/index.js'
 import assert from 'node:assert'
-
-const PORT = 3000;
+import { describe, it } from 'node:test'
 
 const app = new HttpApp();
 
-app.use((ctx, next) => {
-  console.log(ctx.pathname)
-  console.log(ctx.query)
+app.use((ctx) => {
   ctx.body = 'hello'
-});
+})
 
-const server = app.listen(PORT, () => {
-  console.log(`Test server running on port ${PORT}`);
-});
+const server = app.listen(7001, async () => {
+  runTest()
+})
 
-async function runTests() {
-  const getRes = await fetch(`http://localhost:${PORT}?a=1#xx`);
-  assert.equal(getRes.status, 200);
-  assert.equal(await getRes.text(), 'hello');
+function runTest() {
+  describe('app', () => {
+    it('should have a response', async () => {
+      const getRes = await fetch(`http://localhost:7000`);
+      assert.equal(getRes.status, 200);
+      assert.equal(await getRes.text(), 'hello');
+    })
+  })
 
-  // const paramRes = await fetch(`http://localhost:${PORT}/user/42`);
-  // assert.equal(await paramRes.text(), 'User ID: 42');
-
-  // const postRes = await fetch(`http://localhost:${PORT}/api/data`, {
-  //   method: 'POST',
-  //   body: JSON.stringify({ test: true })
-  // });
-  // assert.equal(await postRes.text(), 'Received: {"test":true}');
-
-  // const notFoundRes = await fetch(`http://localhost:${PORT}/not-found`);
-  // assert.equal(notFoundRes.status, 404);
-
-  console.log('All tests passed!');
-  // app.close();
-  server.close()
 }
-
-setTimeout(runTests, 500);

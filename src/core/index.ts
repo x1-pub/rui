@@ -1,18 +1,13 @@
-import http from 'node:http'
-import https from 'node:https'
-import http2 from 'node:http2'
 import EventEmitter from 'node:events'
 
 import context from '../context/index.js'
-import type { Context } from '../context/index.js'
+import type { Context, Middleware, Request, Response, AppOptions } from '../type'
 
-type Middleware<T, D> = (ctx: Context<T, D>, next: () => Promise<void>) => Promise<void> | void;
-
-class HttpApp<RequestType extends http.IncomingMessage | http2.Http2ServerRequest, ResponseType extends http.ServerResponse | http2.Http2ServerResponse> extends EventEmitter {
+class HttpApp<RequestType extends Request, ResponseType extends Response> extends EventEmitter {
   private context: Context<RequestType, ResponseType>
   private middlewares: Middleware<RequestType, ResponseType>[]
 
-  constructor (options?: http.ServerOptions | https.ServerOptions | http2.SecureServerOptions) {
+  constructor (options?: AppOptions) {
     super()
     this.middlewares = []
     this.context = Object.create(context) as Context<RequestType, ResponseType>
@@ -53,7 +48,7 @@ class HttpApp<RequestType extends http.IncomingMessage | http2.Http2ServerReques
     }
 
     ctx.res.statusCode = 200
-    ctx.res.end(ctx.body)
+    ctx.res.end(ctx.body as any)
   }
 
   use = (fn: Middleware<RequestType, ResponseType>) => {
