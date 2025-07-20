@@ -10,6 +10,8 @@ const context = {
   get host () {
     return this.req.headers['x-forwarded-host'] || this.req.headers.host
   }
+
+  // TODO: set body writable?
 } as HttpContext & Http2Context & HttpsContext
 
 export default context

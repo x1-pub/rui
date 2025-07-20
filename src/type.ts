@@ -40,10 +40,17 @@ export type HttpsContext = Context<HttpsRequest, HttpsResponse>
 export type Next = () => Promise<void>
 
 export interface Middleware<T extends Request, D extends Response> {
-  (ctx: Context<T, D>, next: Next): Promise<void> | void;
+  (ctx: Context<T, D>, next: Next): void;
 }
 
 export type HttpMiddleware = Middleware<HttpRequest, HttpResponse>
 export type Http2Middleware = Middleware<Http2Request, Http2Response>
 export type Http2sMiddleware = Middleware<Http2sRequest, Http2sResponse>
 export type HttpsMiddleware = Middleware<HttpsRequest, HttpsResponse>
+
+export type HookType = 'onRequest' | 'onBeforeResponse' | 'onResponse' | 'onError'
+
+export interface AddHookFunction<T extends Request, D extends Response, U> {
+  (name: Exclude<HookType, 'onError'>, fn: (ctx: Context<T, D>) => void): U;
+  (name: 'onError', fn: (ctx: Context<T, D>, err: Error) => void): U;
+}
