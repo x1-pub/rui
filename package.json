@@ -54,6 +54,7 @@
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^11.1.5",
+    "@types/formidable": "^3.4.5",
     "@types/node": "^18.19.119",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
@@ -66,7 +67,7 @@
     "typescript": "^5.4.2"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 20"
   },
   "standard": {
     "parser": "@typescript-eslint/parser",
@@ -77,5 +78,8 @@
   "files": [
     "dist",
     "LICENSE"
-  ]
+  ],
+  "dependencies": {
+    "formidable": "^3.5.4"
+  }
 }

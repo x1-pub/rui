@@ -1,7 +1,9 @@
 import EventEmitter from 'node:events'
 
+import urlParser from '../middlewares/url-parse/index.js'
 import context from '../context/index.js'
 import type { Context, Middleware, Request, Response, AppOptions } from '../type'
+import dataParser from '../middlewares/data-parse/index.js'
 
 class HttpApp<RequestType extends Request, ResponseType extends Response> extends EventEmitter {
   private context: Context<RequestType, ResponseType>
@@ -9,7 +11,7 @@ class HttpApp<RequestType extends Request, ResponseType extends Response> extend
 
   constructor (options?: AppOptions) {
     super()
-    this.middlewares = []
+    this.middlewares = [urlParser, dataParser]
     this.context = Object.create(context) as Context<RequestType, ResponseType>
   }
 

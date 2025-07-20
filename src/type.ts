@@ -23,9 +23,12 @@ export type Response = HttpResponse | Http2Response | Http2sResponse | HttpsResp
 export interface Context<T extends Request, D extends Response> {
   req: T;
   res: D;
-  pathname: unknown;
-  query: unknown;
-  params: unknown;
+  protocol: 'http' | 'https';
+  pathname: string;
+  query: Record<string, undefined | string | string[]>;
+  host?: string;
+  params: Record<string, string>;
+  data: unknown;
   body: unknown;
 }
 
