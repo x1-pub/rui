@@ -48,9 +48,23 @@ export type Http2Middleware = Middleware<Http2Request, Http2Response>
 export type Http2sMiddleware = Middleware<Http2sRequest, Http2sResponse>
 export type HttpsMiddleware = Middleware<HttpsRequest, HttpsResponse>
 
-export type HookType = 'onRequest' | 'onBeforeResponse' | 'onResponse' | 'onError'
+export type HookType = 'onRequest' | 'preParsing' | 'preHandler' | 'onBeforeResponse' | 'onResponse' | 'onError'
 
 export interface AddHookFunction<T extends Request, D extends Response, U> {
   (name: Exclude<HookType, 'onError'>, fn: (ctx: Context<T, D>) => void): U;
   (name: 'onError', fn: (ctx: Context<T, D>, err: Error) => void): U;
+}
+
+export interface Plugin<U> {
+  (rui: U, options: PluginOptions): void;
+}
+
+export interface PluginOptions {
+  prefix?: string;
+}
+
+export type HttpMethod = 'delete' | 'get' | 'head' | 'patch' | 'post' | 'put' |  'options'
+
+export interface HttpHandler<T extends Request, D extends Response> {
+  (path: string, handler: (ctx: Context<T, D>) => void): void;
 }

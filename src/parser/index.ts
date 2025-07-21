@@ -1,6 +1,7 @@
-import { Buffer } from 'node:buffer';
-import formidable from 'formidable';
-import type { Request, Response, Next, Context } from "../../type"
+import { Buffer } from 'node:buffer'
+import formidable from 'formidable'
+import url from 'node:url'
+import type { Request, Response, Context } from '../type'
 
 const defaultJsonTypes = [
   'application/json',
@@ -8,8 +9,8 @@ const defaultJsonTypes = [
   'application/vnd.api+json',
   'application/csp-report',
   'application/reports+json',
-  'application/scim+json',
-];
+  'application/scim+json'
+]
 
 const getContentType = (type: string) => {
   if (defaultJsonTypes.includes(type)) {
@@ -31,56 +32,56 @@ const getContentType = (type: string) => {
 
 const collectBody = (req: Request): Promise<Buffer> => {
   return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    let size = 0;
+    const chunks: Buffer[] = []
+    let size = 0
 
     // TODO: limit
     const limit = 1024 * 1024
 
     req.on('data', (chunk: Buffer) => {
-      chunks.push(chunk);
-      size += chunk.length;
+      chunks.push(chunk)
+      size += chunk.length
 
       if (size > limit) {
-        reject('Payload too large');
+        reject(new Error('Payload too large'))
       }
-    });
+    })
 
     req.on('end', () => {
-      resolve(Buffer.concat(chunks));
-    });
+      resolve(Buffer.concat(chunks))
+    })
 
     req.on('error', (err) => {
-      reject(err);
-    });
-  });
+      reject(err)
+    })
+  })
 }
 
 const parseText = async (req: Request) => {
-  const buffer = await collectBody(req);
+  const buffer = await collectBody(req)
 
   // TODO: encoding
-  return buffer.toString('utf-8');
+  return buffer.toString('utf-8')
 }
 
 const parseJson = async (req: Request) => {
-  const buffer = await collectBody(req);
+  const buffer = await collectBody(req)
 
   // TODO: encoding
-  const content = buffer.toString('utf-8');
+  const content = buffer.toString('utf-8')
 
   try {
-    return JSON.parse(content) as Record<string, unknown>;
+    return JSON.parse(content) as Record<string, unknown>
   } catch (err) {
     throw new Error('Invalid JSON payload')
   }
 }
 
 const parseForm = async (req: Request) => {
-  const buffer = await collectBody(req);
+  const buffer = await collectBody(req)
 
   // TODO: encoding
-  const content = buffer.toString('utf-8');
+  const content = buffer.toString('utf-8')
   const searchParams = [...new URLSearchParams(content).entries()]
   const queryObject: Record<string, undefined | string | string[]> = {}
   for (const [key, value] of searchParams) {
@@ -95,17 +96,37 @@ const parseForm = async (req: Request) => {
 }
 
 const parseMultipart = async (req: Request) => {
-  const form = formidable({ multiples: true });
+  const form = formidable({ multiples: true })
 
   // @ts-expect-error Http2ServerRequest 缺少的 headersDistinct trailersDistinct 用不到
-  const [fields, files] = await form.parse(req);
+  const [fields, files] = await form.parse(req)
 
   return { fields, files }
 }
 
-const dataParser = async <T extends Request, D extends Response>(ctx: Context<T, D>, next: Next) => {
-  const contentType = getContentType(ctx.req.headers['content-type'] || '')
+const parseUrl = (req: Request) => {
+  const { query, pathname } = url.parse(req.url || '/')
+  const searchParams = [...new URLSearchParams(query || '').entries()]
+  const queryObject: Record<string, undefined | string | string[]> = {}
+  for (const [key, value] of searchParams) {
+    if (!queryObject[key]) {
+      queryObject[key] = value
+      continue
+    }
 
+    queryObject[key] = [value, ...queryObject[key]]
+  }
+
+  return {
+    pathname: pathname || '/',
+    query: queryObject
+  }
+}
+
+const parser = async <T extends Request, D extends Response>(ctx: Context<T, D>) => {
+  const { query, pathname } = parseUrl(ctx.req)
+
+  const contentType = getContentType(ctx.req.headers['content-type'] || '')
   let data: unknown
   if (contentType === 'text') {
     data = await parseText(ctx.req)
@@ -119,11 +140,12 @@ const dataParser = async <T extends Request, D extends Response>(ctx: Context<T,
     data = await parseMultipart(ctx.req)
     ctx.data = data
   } else {
-    data = await collectBody(ctx.req);
+    data = await collectBody(ctx.req)
   }
-  ctx.data = data
 
-  await next()
+  ctx.pathname = pathname
+  ctx.query = query
+  ctx.data = data
 }
 
-export default dataParser
+export default parser

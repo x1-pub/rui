@@ -6,15 +6,16 @@ import type { Http2sRequest, Http2sResponse, Http2sAppOptions, Http2sContext, Ne
 type Http2sServerListenParameters = Parameters<ReturnType<typeof createSecureServer>['listen']>
 
 class Http2sApp extends App<Http2sRequest, Http2sResponse> {
-  private options: Http2sAppOptions
+  private option: Http2sAppOptions
 
-  constructor (options?: Http2sAppOptions) {
-    super(options)
-    this.options = options || {}
+  constructor (option?: Http2sAppOptions) {
+    super(option)
+    this.option = option || {}
   }
 
   listen = (...args: Http2sServerListenParameters): Http2SecureServer => {
-    const server = createSecureServer(this.options, this.callback)
+    const server = createSecureServer(this.option, this.callback)
+    server.on('listening', this.executePlugins)
     return server.listen(...args)
   }
 }

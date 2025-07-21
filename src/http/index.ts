@@ -6,16 +6,18 @@ import type { HttpRequest, HttpResponse, HttpAppOptions, HttpContext, Next, Http
 type HttpServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
 
 class HttpApp extends App<HttpRequest, HttpResponse> {
-  private options: HttpAppOptions
+  private option: HttpAppOptions
 
-  constructor (options?: HttpAppOptions) {
-    super(options)
-    this.options = options || {}
+  constructor (option?: HttpAppOptions) {
+    super(option)
+    this.option = option || {}
   }
 
   listen = (...args: HttpServerListenParameters): Server => {
-    const server = createServer(this.options, this.callback)
-    return server.listen(...args)
+    const server = createServer(this.option, this.callback)
+    server.listen(...args)
+    server.on('listening', this.executePlugins)
+    return server
   }
 }
 

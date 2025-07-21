@@ -4,7 +4,7 @@ import { describe, it } from 'node:test'
 
 const app = new HttpApp();
 
-app.use((ctx) => {
+app.addMiddlewares((ctx) => {
   ctx.body = 'hello'
 })
 

@@ -6,15 +6,16 @@ import type { Http2Request, Http2Response, Http2AppOptions, Http2Context, Next, 
 type Http2ServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
 
 class Http2App extends App<Http2Request, Http2Response> {
-  private options: Http2AppOptions
+  private option: Http2AppOptions
 
-  constructor (options?: Http2AppOptions) {
-    super(options)
-    this.options = options || {}
+  constructor (option?: Http2AppOptions) {
+    super(option)
+    this.option = option || {}
   }
 
   listen = (...args: Http2ServerListenParameters): Http2Server => {
-    const server = createServer(this.options, this.callback)
+    const server = createServer(this.option, this.callback)
+    server.on('listening', this.executePlugins)
     return server.listen(...args)
   }
 }
