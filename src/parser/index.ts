@@ -143,9 +143,11 @@ const parser = async <T extends Request, D extends Response>(ctx: Context<T, D>)
     data = await collectBody(ctx.req)
   }
 
-  ctx.pathname = pathname
-  ctx.query = query
-  ctx.data = data
+  return {
+    pathname,
+    query,
+    data
+  }
 }
 
 export default parser

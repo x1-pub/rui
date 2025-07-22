@@ -9,37 +9,39 @@ const sleep = (num: number) => new Promise((resolve, reject) => {
 
 const app = new HttpApp()
 
-app.addMiddlewares(async (ctx, next) => {
-  console.log('use')
-  throw new Error('123123')
-})
-
 app.addHook('onError', (ctx, err) => {
   console.log(err)
   console.log('onError')
   ctx.body = 'have an error'
 })
-app.addHook('onRequest', ctx => {
-  console.log('onRequest')
-  throw new Error('456456')
-})
 
 app.addPlugin((rui, options) => {
-  // rui.
-  console.log(1)
+  rui.get('/user', (ctx) => {
+    ctx.body = 'get zhangsan'
+  })
+  rui.post('/user', (ctx) => {
+    ctx.body = 'post zhangsan'
+  })
+  rui.delete('/user/uu', async (ctx, next) => {
+    console.log(1)
+    await next()
+    console.log(4)
+  }, async (ctx, next) => {
+    console.log(2)
+    await next()
+    console.log(3)
+  }, (ctx) => {
+    ctx.body = 'delete zhangsan'
+  })
+  rui.all('/test', (ctx) => {
+    ctx.body = 'all test'
+  })
+  // rui.all('*', async ctx => {
+  //   console.log(333)
+  //   ctx.body = 'all *'
+  // })
 }, {})
 
-app.addPlugin(async(rui, options) => {
-  // rui.
-  console.log(2)
-}, {})
-
-app.addPlugin((rui, options) => {
-  // rui.
-  console.log(3)
-}, {})
-
-// app.
 
 
 app.listen(8888, () => {

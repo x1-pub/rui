@@ -1,14 +1,21 @@
 import context from '../context/index.js'
 import parser from '../parser/index.js'
-import type { Context, Middleware, Request, Response, AppOptions, HookType, AddHookFunction, Plugin, PluginOptions, HttpHandler } from '../type'
+import type { Context, Middleware, Request, Response, AppOptions, HookType, AddHookFunction, Plugin, PluginOptions, HttpMethod, RouteHandler, RouteFunction } from '../type'
 
-// const methods: HttpMethod[] = ['delete', 'get', 'head', 'patch', 'post', 'put', 'options']
+const methods: HttpMethod[] = ['delete', 'get', 'head', 'patch', 'post', 'put', 'options']
+interface RouteNode<T extends Request, D extends Response> {
+  handler?: RouteHandler<T, D>;
+  params?: string;
+  children: Map<string, RouteNode<T, D>>;
+  wildcard?: RouteNode<T, D>;
+}
 
 abstract class App<RequestType extends Request, ResponseType extends Response> {
   private context: Context<RequestType, ResponseType>
   private middlewares: Middleware<RequestType, ResponseType>[]
   private hooks: Record<HookType, AddHookFunction<RequestType, Response, this>[]>
   private plugins: [Plugin<this>, PluginOptions][]
+  private routes: Map<HttpMethod, RouteNode<RequestType, ResponseType>>
 
   constructor (options?: AppOptions) {
     this.middlewares = []
@@ -21,11 +28,88 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
       onError: []
     }
     this.plugins = []
+    this.routes = new Map()
+    methods.forEach(method => {
+      this.routes.set(method, { children: new Map() })
+    })
     this.context = Object.create(context) as Context<RequestType, ResponseType>
   }
 
-  private handler: HttpHandler<RequestType, ResponseType> = (path, handler) => {
+  private parsePath (path: string): string[] {
+    return path.split('/').filter(segment => segment.length > 0)
+  }
 
+  private route = (method: HttpMethod, path: string, ...args: [...Middleware<RequestType, ResponseType>[], RouteHandler<RequestType, ResponseType>]) => {
+    const segments = this.parsePath(path)
+    let currentNode = this.routes.get(method)!
+
+    for (const segment of segments) {
+      if (segment.startsWith(':')) {
+        const paramName = segment.slice(1)
+
+        if (!currentNode.params) {
+          currentNode.params = paramName
+          currentNode.children.set('$param', { children: new Map() })
+        }
+
+        // 移动到参数节点
+        currentNode = currentNode.children.get('$param')!
+      } else if (segment === '*') {
+        if (!currentNode.wildcard) {
+          currentNode.wildcard = { children: new Map() }
+        }
+        currentNode = currentNode.wildcard
+      } else {
+        if (!currentNode.children.has(segment)) {
+          currentNode.children.set(segment, { children: new Map() })
+        }
+        currentNode = currentNode.children.get(segment)!
+      }
+    }
+
+    currentNode.handler = this.compose(args)
+  }
+
+  private findRoute = (method: HttpMethod, path: string) => {
+    if (!method || !methods.includes(method)) {
+      return {}
+    }
+
+    const segments = this.parsePath(path)
+    const currentNode = this.routes.get(method)
+    const params: Record<string, string> = {}
+
+    if (!currentNode) {
+      return {}
+    }
+
+    let node: RouteNode<RequestType, ResponseType> | undefined = currentNode
+
+    for (const segment of segments) {
+      if (node.children.has(segment)) {
+        node = node.children.get(segment)
+      } else if (node.params) {
+        params[node.params] = segment
+        node = node.children.get('$param')
+      } else if (node.wildcard) {
+        node = node.wildcard
+      } else {
+        return {}
+      }
+
+      if (!node) {
+        return {}
+      }
+    }
+
+    if (!node.handler && node.wildcard) {
+      node = node.wildcard
+    }
+
+    return {
+      handler: node.handler,
+      params
+    }
   }
 
   private executeHooks = async (name: HookType, ctx: Context<RequestType, ResponseType>, err?: Error) => {
@@ -34,17 +118,17 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
     await Promise.all(promisis)
   }
 
-  private executeMiddlewares = (ctx: Context<RequestType, ResponseType>) => {
-    const dispatch = (i: number): Promise<void> => {
-      if (this.middlewares.length === i) {
+  private compose = (middlewares: Middleware<RequestType, ResponseType>[]) => {
+    const dispatch = (ctx: Context<RequestType, ResponseType>, i: number = 0): Promise<void> => {
+      if (middlewares.length === i) {
         return Promise.resolve()
       }
 
-      const fn = this.middlewares[i]
-      return Promise.resolve(fn(ctx, () => dispatch(i + 1)))
+      const fn = middlewares[i]
+      return Promise.resolve(fn(ctx, () => dispatch(ctx, i + 1)))
     }
 
-    return dispatch(0)
+    return dispatch
   }
 
   protected executePlugins = async () => {
@@ -53,16 +137,9 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
     }
   }
 
-  private handleRequest = async (ctx: Context<RequestType, ResponseType>) => {
-    // await this.executeMiddlewares(ctx)
-
-    // 匹配路由
-    await this.handleResponse(ctx)
-  }
-
   private handleResponse = async (ctx: Context<RequestType, ResponseType>) => {
     ctx.res.statusCode = 404
-    if (ctx.body !== null) {
+    if (ctx.body != null) {
       ctx.res.statusCode = 200
     }
 
@@ -70,11 +147,35 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
 
     // TODO: type of body
     // TODO: content-type ?
-    if (!ctx.res.writable) {
+    if (ctx.res.writable) {
       ctx.res.end(ctx.body as any)
     }
 
     await this.executeHooks('onResponse', ctx)
+  }
+
+  private executeHandler = async (ctx: Context<RequestType, ResponseType>) => {
+    await this.executeHooks('preParsing', ctx)
+
+    await this.compose([
+      ...this.middlewares,
+      async (_ctx) => {
+        const { pathname, query, data } = await parser(_ctx)
+        const method = (_ctx.req.method || '').toLowerCase() as HttpMethod
+        const { params = {}, handler } = this.findRoute(method, pathname)
+        _ctx.params = params
+        _ctx.pathname = pathname
+        _ctx.query = query
+        _ctx.data = data
+
+        if (!handler) {
+          return
+        }
+
+        await this.executeHooks('preHandler', _ctx)
+        await handler(_ctx)
+      }
+    ])(ctx)
   }
 
   protected callback = async (req: RequestType, res: ResponseType) => {
@@ -84,10 +185,8 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
 
     try {
       await this.executeHooks('onRequest', ctx)
-      await this.executeHooks('preParsing', ctx)
-      parser(ctx)
-      await this.executeHooks('preHandler', ctx)
-      await this.handleRequest(ctx)
+      await this.executeHandler(ctx)
+      await this.handleResponse(ctx)
     } catch (err) {
       this.executeHooks('onError', ctx, err as Error)
         .catch(() => { })
@@ -127,21 +226,43 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
     return this
   }
 
-  delete = this.handler
+  delete: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
+    this.route('delete', path, ...args)
+  }
 
-  get = this.handler
+  get: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
+    this.route('get', path, ...args)
+  }
 
-  head = this.handler
+  head: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
+    this.route('head', path, ...args)
+  }
 
-  patch = this.handler
+  patch: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
+    this.route('patch', path, ...args)
+  }
 
-  post = this.handler
+  post: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
+    this.route('post', path, ...args)
+  }
 
-  put = this.handler
+  put: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
+    this.route('put', path, ...args)
+  }
 
-  options = this.handler
+  options: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
+    this.route('options', path, ...args)
+  }
 
-  all = this.handler
+  all: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
+    this.route('delete', path, ...args)
+    this.route('get', path, ...args)
+    this.route('head', path, ...args)
+    this.route('patch', path, ...args)
+    this.route('post', path, ...args)
+    this.route('put', path, ...args)
+    this.route('options', path, ...args)
+  }
 }
 
 export default App

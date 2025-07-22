@@ -65,6 +65,8 @@ export interface PluginOptions {
 
 export type HttpMethod = 'delete' | 'get' | 'head' | 'patch' | 'post' | 'put' |  'options'
 
-export interface HttpHandler<T extends Request, D extends Response> {
-  (path: string, handler: (ctx: Context<T, D>) => void): void;
+export type RouteHandler<T extends Request, D extends Response> = (ctx: Context<T, D>) => void
+
+export interface RouteFunction<T extends Request, D extends Response> {
+  (path: string, ...middlewares: [...Middleware<T, D>[], RouteHandler<T, D>]): void;
 }
