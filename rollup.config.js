@@ -31,11 +31,13 @@ export default [
         exports: 'auto',
         dir: 'dist/cjs',
         chunkFileNames: 'core.cjs',
+        entryFileNames: '[name].cjs',
       },
       {
         format: 'esm',
         dir: 'dist/esm',
-        chunkFileNames: 'core.cjs',
+        chunkFileNames: 'core.mjs',
+        entryFileNames: '[name].mjs',
       }
     ],
     plugins: [
