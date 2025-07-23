@@ -4,7 +4,18 @@ import typescript from '@rollup/plugin-typescript';
 import { dts } from 'rollup-plugin-dts';
 import json from '@rollup/plugin-json';
 
-const external = ['node:http', 'node:https', 'node:http2', 'node:events', 'node:tls', 'node:url']
+// TODO: auto
+const external = [
+  'node:http',
+  'node:https',
+  'node:http2',
+  'node:events',
+  'node:tls',
+  'node:url',
+  'external',
+  'formidable',
+  'mime-types',
+]
 
 export default [
   {
