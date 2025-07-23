@@ -14,11 +14,6 @@ import type {
   HttpMethod
 } from '../type'
 
-// export interface AddHookFunction<T extends CommonRequest, D extends CommonResponse, U> {
-//   (name: Exclude<HookType, 'onError'>, fn: (ctx: Context<T, D>) => void): U;
-//   (name: 'onError', fn: (ctx: Context<T, D>, err: Error) => void): U;
-// }
-
 abstract class App<T extends CommonRequest, D extends CommonResponse> {
   private context!: Context<T, D>
   private middlewares!: Middleware<T, D>[]

@@ -3,34 +3,34 @@
   "version": "0.0.12",
   "description": "Rui is a TypeScript-based Node.js server-side framework",
   "type": "module",
-  "types": "./http/index.d.ts",
-  "main": "./http/index.cjs",
-  "module": "./http/index.mjs",
+  "types": "dist/http.d.ts",
+  "main": "dist/cjs/http.cjs",
+  "module": "dist/esm/http.mjs",
   "exports": {
     ".": {
-      "types": "./http/index.d.ts",
-      "require": "./http/index.cjs",
-      "import": "./http/index.mjs"
+      "types": "./dist/http.d.ts",
+      "require": "./dist/cjs/http.cjs",
+      "import": "./dist/esm/http.mjs"
     },
     "./http": {
-      "types": "./http/index.d.ts",
-      "require": "./http/index.cjs",
-      "import": "./http/index.mjs"
+      "types": "./dist/http.d.ts",
+      "require": "./dist/cjs/http.cjs",
+      "import": "./dist/esm/http.mjs"
     },
     "./http2": {
-      "types": "./http2/index.d.ts",
-      "require": "./http2/index.cjs",
-      "import": "./http2/index.mjs"
+      "types": "./dist/http2.d.ts",
+      "require": "./dist/cjs/http2.cjs",
+      "import": "./dist/esm/http2.mjs"
     },
     "./http2s": {
-      "types": "./http2s/index.d.ts",
-      "require": "./http2s/index.cjs",
-      "import": "./http2s/index.mjs"
+      "types": "./dist/http2s.d.ts",
+      "require": "./dist/cjs/http2s.cjs",
+      "import": "./dist/esm/http2s.mjs"
     },
     "./https": {
-      "types": "./https/index.d.ts",
-      "require": "./https/index.cjs",
-      "import": "./https/index.mjs"
+      "types": "./dist/https.d.ts",
+      "require": "./dist/cjs/https.cjs",
+      "import": "./dist/esm/https.mjs"
     }
   },
   "scripts": {

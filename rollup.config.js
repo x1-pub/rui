@@ -38,6 +38,44 @@ const tsConfig = modules.map(module => ({
 }))
 
 export default [
-  ...mainConfig,
-  ...tsConfig,
+  {
+    input: {
+      http: 'src/http/index.ts',
+      http2: 'src/http2/index.ts',
+      http2s: 'src/http2s/index.ts',
+      https: 'src/https/index.ts',
+    },
+    output: [
+      {
+        format: 'cjs',
+        exports: 'auto',
+        dir: 'dist/cjs',
+        chunkFileNames: 'core.cjs',
+      },
+      {
+        format: 'esm',
+        dir: 'dist/esm',
+        chunkFileNames: 'core.cjs',
+      }
+    ],
+    plugins: [
+      resolve(),
+      commonjs(),
+      typescript(),
+    ],
+    external,
+  },
+  {
+    input: {
+      http: 'src/http/index.ts',
+      http2: 'src/http2/index.ts',
+      http2s: 'src/http2s/index.ts',
+      https: 'src/https/index.ts',
+    },
+    output: { dir: 'dist', chunkFileNames: 'core.d.ts' },
+    plugins: [dts()],
+    external,
+  }
+  // ...mainConfig,
+  // ...tsConfig,
 ];  
