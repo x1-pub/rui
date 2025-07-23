@@ -41,27 +41,34 @@ npm install @x1.pub/rui
 ## Simple Example
 
 ```typescript
-import { HttpApp, HttpsApp, Http2App } from '@x1.pub/rui'
+import Rui from '@x1.pub/rui' // equals: import Rui from '@x1.pub/rui/http'
 
-const http = new HttpApp({ /** ServerOptions  */ })
-const https = new HttpsApp({ /** ServerOptions  */ })
-const http2 = new Http2App({ /** SecureServerOptions */ })
+// Additionally, you can:
+// import Rui from '@x1.pub/rui/http2'
+// import Rui from '@x1.pub/rui/http2s'
+// import Rui from '@x1.pub/rui/https'
 
-http.use(ctx => {
-  ctx.body = 'Hello World';
-});
+const rui = new Rui()
 
-http.listen(8080, () => {
-  console.log('The service is running at http://localhost:8080')
+rui.router.get('/', (ctx) => {
+  ctx.data = 'rui!'
 })
 
-https.listen(8081, () => {
-  console.log('The service is running at http://localhost:8081')
+rui.addPlugin((rui) => {
+  rui.router.all('/test', (ctx) => {
+    ctx.data = 'test!'
+  })
+
+  rui.router.post('/user/:id', (ctx) => {
+    ctx.data = ctx.query.id
+  })
+}, { prefix: '/api/v1'})
+
+rui.addHook('onError', (ctx, err) => {
+  ctx.data = err
 })
 
-http2.listen(8082, () => {
-  console.log('The service is running at http://localhost:8082')
-})
+rui.listen(8888)
 ```
 
 ## License
