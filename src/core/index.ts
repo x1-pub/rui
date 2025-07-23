@@ -41,9 +41,10 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   private initHooks = () => {
     this.hooks = {
       onRequest: [],
-      preParsing: [],
-      preHandler: [],
-      onBeforeResponse: [],
+      onPreParsing: [],
+      onPreHandler: [],
+      onPreSerialization: [],
+      onPreResponse: [],
       onResponse: [],
       onError: []
     }
@@ -82,45 +83,43 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     }
   }
 
-  private handleResponse = async (ctx: Context<T, D>) => {
-    ctx.res.statusCode = 404
-    if (ctx.body != null) {
-      ctx.res.statusCode = 200
-    }
-
-    await this.executeHooks('onBeforeResponse', ctx)
-
-    // TODO: type of body
-    // TODO: content-type ?
-    if (ctx.res.writable) {
-      ctx.res.end(ctx.body as any)
-    }
-
-    await this.executeHooks('onResponse', ctx)
+  private serialize = (ctx: Context<T, D>) => {
+    this.executeHooks('onPreParsing', ctx)
   }
 
-  private executeHandler = async (ctx: Context<T, D>) => {
-    await this.executeHooks('preParsing', ctx)
+  private send = (ctx: Context<T, D>) => {
+    this.executeHooks('onPreResponse', ctx)
 
-    await this.compose([
-      ...this.middlewares,
-      async (_ctx) => {
-        const { pathname, query, data } = await parser(_ctx)
-        const method = (_ctx.req.method || '').toLowerCase() as HttpMethod
-        const { params = {}, handler } = (this.router as Router<T, D>).findRoute(method, pathname)
-        _ctx.params = params
-        _ctx.pathname = pathname
-        _ctx.query = query
-        _ctx.data = data
+    ctx.res.end(ctx.data as any)
 
-        if (!handler) {
-          return
-        }
+    ctx.res.on('finish', () => {
+      this.executeHooks('onResponse', ctx)
+    })
+  }
 
-        await this.executeHooks('preHandler', _ctx)
-        await handler(_ctx)
-      }
-    ])(ctx)
+  private handleRequest = async (ctx: Context<T, D>) => {
+    await this.executeHooks('onPreParsing', ctx)
+
+    const { pathname, query, data } = await parser(ctx)
+    const method = (ctx.req.method || '').toLowerCase() as HttpMethod
+    const { params = {}, handler = () => { } } = (this.router as Router<T, D>).findRoute(method, pathname)
+    ctx.params = params
+    ctx.pathname = pathname
+    ctx.query = query
+    ctx.data = data
+
+    await this.executeHooks('onPreHandler', ctx)
+
+    await handler(ctx)
+  }
+
+  private executeMiddlewares = async (ctx: Context<T, D>) => {
+    await this.compose([...this.middlewares, this.handleRequest])(ctx)
+  }
+
+  private handleResponse = async (ctx: Context<T, D>) => {
+    await this.serialize(ctx)
+    await this.send(ctx)
   }
 
   protected callback = async (req: T, res: D) => {
@@ -130,19 +129,12 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
 
     try {
       await this.executeHooks('onRequest', ctx)
-      await this.executeHandler(ctx)
+      await this.executeMiddlewares(ctx)
       await this.handleResponse(ctx)
     } catch (err) {
       this.executeHooks('onError', ctx, err as Error)
         .catch(() => { })
-        .finally(() => {
-          ctx.res.statusCode = 404
-          if (ctx.body !== null) {
-            ctx.res.statusCode = 200
-          }
-
-          ctx.res.end(ctx.body as any)
-        })
+        .finally(() => this.handleResponse(ctx))
     }
   }
 

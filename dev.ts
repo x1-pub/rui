@@ -12,15 +12,15 @@ const app = new HttpApp()
 app.addHook('onError', (ctx, err) => {
   console.log(err)
   console.log('onError')
-  ctx.body = 'have an error'
+  ctx.data = 'have an error'
 })
 
 app.addPlugin((rui, options) => {
   rui.router.get('/user', (ctx) => {
-    ctx.body = 'get zhangsan'
+    ctx.data = 'get zhangsan'
   })
   rui.router.post('/user', (ctx) => {
-    ctx.body = 'post zhangsan'
+    ctx.data = 'post zhangsan'
   })
   rui.router.delete('/user/uu', async (ctx, next) => {
     console.log(1)
@@ -31,14 +31,14 @@ app.addPlugin((rui, options) => {
     await next()
     console.log(3)
   }, (ctx) => {
-    ctx.body = 'delete zhangsan'
+    ctx.data = 'delete zhangsan'
   })
   rui.router.all('/test', (ctx) => {
-    ctx.body = 'all test'
+    ctx.data = 'all test'
   })
   // rui.all('*', async ctx => {
   //   console.log(333)
-  //   ctx.body = 'all *'
+  //   ctx.data = 'all *'
   // })
 }, {})
 

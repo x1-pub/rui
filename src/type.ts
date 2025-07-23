@@ -48,7 +48,7 @@ export type Http2Middleware = Middleware<Http2Request, Http2Response>
 export type Http2sMiddleware = Middleware<Http2sRequest, Http2sResponse>
 export type HttpsMiddleware = Middleware<HttpsRequest, HttpsResponse>
 
-export type HookType = 'onRequest' | 'preParsing' | 'preHandler' | 'onBeforeResponse' | 'onResponse' | 'onError'
+export type HookType = 'onRequest' | 'onPreParsing' | 'onPreHandler' | 'onPreSerialization' | 'onPreResponse' | 'onResponse' | 'onError'
 
 export interface AddHookFunction<T extends CommonRequest, D extends CommonResponse, U> {
   (name: Exclude<HookType, 'onError'>, fn: (ctx: Context<T, D>) => void): U;
