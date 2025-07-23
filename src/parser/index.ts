@@ -127,26 +127,26 @@ const parser = async <T extends CommonRequest, D extends CommonResponse>(ctx: Co
   const { query, pathname } = parseUrl(ctx.req)
 
   const contentType = getContentType(ctx.req.headers['content-type'] || '')
-  let data: unknown
+  let body: unknown
   if (contentType === 'text') {
-    data = await parseText(ctx.req)
+    body = await parseText(ctx.req)
   } else if (contentType === 'json') {
-    data = await parseJson(ctx.req)
-    ctx.data = data
+    body = await parseJson(ctx.req)
+    ctx.body = body
   } else if (contentType === 'form') {
-    data = await parseForm(ctx.req)
-    ctx.data = data
+    body = await parseForm(ctx.req)
+    ctx.body = body
   } else if (contentType === 'multipart') {
-    data = await parseMultipart(ctx.req)
-    ctx.data = data
+    body = await parseMultipart(ctx.req)
+    ctx.body = body
   } else {
-    data = await collectBody(ctx.req)
+    body = await collectBody(ctx.req)
   }
 
   return {
     pathname,
     query,
-    data
+    body
   }
 }
 

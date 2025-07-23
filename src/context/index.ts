@@ -1,5 +1,4 @@
 import type { TLSSocket } from 'node:tls'
-
 import type { HttpContext, Http2Context, HttpsContext } from '../type'
 
 const context = {

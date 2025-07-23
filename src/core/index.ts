@@ -1,5 +1,6 @@
 import context from '../context/index.js'
 import parser from '../parser/index.js'
+import ReplyResolver from '../reply/index.js'
 import Router from '../router/index.js'
 import type {
   Context,
@@ -84,7 +85,15 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   }
 
   private serialize = (ctx: Context<T, D>) => {
-    this.executeHooks('onPreParsing', ctx)
+    this.executeHooks('onPreSerialization', ctx)
+
+    const contentType = ReplyResolver.contentType(ctx)
+    const status = ReplyResolver.status(ctx)
+    const data = ReplyResolver.data(ctx)
+
+    ctx.res.setHeader('content-type', contentType || '')
+    ctx.res.statusCode = status
+    ctx.data = data
   }
 
   private send = (ctx: Context<T, D>) => {
@@ -100,13 +109,13 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   private handleRequest = async (ctx: Context<T, D>) => {
     await this.executeHooks('onPreParsing', ctx)
 
-    const { pathname, query, data } = await parser(ctx)
+    const { pathname, query, body } = await parser(ctx)
     const method = (ctx.req.method || '').toLowerCase() as HttpMethod
     const { params = {}, handler = () => { } } = (this.router as Router<T, D>).findRoute(method, pathname)
     ctx.params = params
     ctx.pathname = pathname
     ctx.query = query
-    ctx.data = data
+    ctx.body = body
 
     await this.executeHooks('onPreHandler', ctx)
 
@@ -122,6 +131,12 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     await this.send(ctx)
   }
 
+  private handleError = async (ctx: Context<T, D>, err: Error) => {
+    this.executeHooks('onError', ctx, err)
+      .catch(() => { })
+      .finally(() => this.handleResponse(ctx))
+  }
+
   protected callback = async (req: T, res: D) => {
     const ctx = Object.create(this.context) as Context<T, D>
     ctx.req = req
@@ -132,9 +147,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
       await this.executeMiddlewares(ctx)
       await this.handleResponse(ctx)
     } catch (err) {
-      this.executeHooks('onError', ctx, err as Error)
-        .catch(() => { })
-        .finally(() => this.handleResponse(ctx))
+      this.handleError(ctx, err as Error)
     }
   }
 

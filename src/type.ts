@@ -28,8 +28,14 @@ export interface Context<T extends CommonRequest, D extends CommonResponse> {
   query: Record<string, undefined | string | string[]>;
   host?: string;
   params: Record<string, string>;
-  data: unknown;
   body: unknown;
+  
+  /**
+   * 返回值
+   */
+  data: unknown;
+
+  // setHeader: (key: string, value: string, parameters?: Record<string, string>) => void;
 }
 
 export type HttpContext = Context<HttpRequest, HttpResponse>
