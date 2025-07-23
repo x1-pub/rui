@@ -12,15 +12,15 @@ export type HttpRequest = http.IncomingMessage
 export type Http2Request = http2.Http2ServerRequest
 export type Http2sRequest = http2.Http2ServerRequest
 export type HttpsRequest = http.IncomingMessage
-export type Request = HttpRequest | Http2Request | Http2sRequest | HttpsRequest
+export type CommonRequest = HttpRequest | Http2Request | Http2sRequest | HttpsRequest
 
 export type HttpResponse = http.ServerResponse
 export type Http2Response = http2.Http2ServerResponse
 export type Http2sResponse = http2.Http2ServerResponse
 export type HttpsResponse = http.ServerResponse
-export type Response = HttpResponse | Http2Response | Http2sResponse | HttpsResponse
+export type CommonResponse = HttpResponse | Http2Response | Http2sResponse | HttpsResponse
 
-export interface Context<T extends Request, D extends Response> {
+export interface Context<T extends CommonRequest, D extends CommonResponse> {
   req: T;
   res: D;
   protocol: 'http' | 'https';
@@ -39,7 +39,7 @@ export type HttpsContext = Context<HttpsRequest, HttpsResponse>
 
 export type Next = () => Promise<void>
 
-export interface Middleware<T extends Request, D extends Response> {
+export interface Middleware<T extends CommonRequest, D extends CommonResponse> {
   (ctx: Context<T, D>, next: Next): void;
 }
 
@@ -50,7 +50,7 @@ export type HttpsMiddleware = Middleware<HttpsRequest, HttpsResponse>
 
 export type HookType = 'onRequest' | 'preParsing' | 'preHandler' | 'onBeforeResponse' | 'onResponse' | 'onError'
 
-export interface AddHookFunction<T extends Request, D extends Response, U> {
+export interface AddHookFunction<T extends CommonRequest, D extends CommonResponse, U> {
   (name: Exclude<HookType, 'onError'>, fn: (ctx: Context<T, D>) => void): U;
   (name: 'onError', fn: (ctx: Context<T, D>, err: Error) => void): U;
 }
@@ -65,8 +65,8 @@ export interface PluginOptions {
 
 export type HttpMethod = 'delete' | 'get' | 'head' | 'patch' | 'post' | 'put' |  'options'
 
-export type RouteHandler<T extends Request, D extends Response> = (ctx: Context<T, D>) => void
+export type RouteHandler<T extends CommonRequest, D extends CommonResponse> = (ctx: Context<T, D>) => void
 
-export interface RouteFunction<T extends Request, D extends Response> {
+export interface RouteFunction<T extends CommonRequest, D extends CommonResponse> {
   (path: string, ...middlewares: [...Middleware<T, D>[], RouteHandler<T, D>]): void;
 }

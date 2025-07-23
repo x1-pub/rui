@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import formidable from 'formidable'
 import url from 'node:url'
-import type { Request, Response, Context } from '../type'
+import type { CommonRequest, CommonResponse, Context } from '../type'
 
 const defaultJsonTypes = [
   'application/json',
@@ -30,7 +30,7 @@ const getContentType = (type: string) => {
   }
 }
 
-const collectBody = (req: Request): Promise<Buffer> => {
+const collectBody = (req: CommonRequest): Promise<Buffer> => {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
     let size = 0
@@ -57,14 +57,14 @@ const collectBody = (req: Request): Promise<Buffer> => {
   })
 }
 
-const parseText = async (req: Request) => {
+const parseText = async (req: CommonRequest) => {
   const buffer = await collectBody(req)
 
   // TODO: encoding
   return buffer.toString('utf-8')
 }
 
-const parseJson = async (req: Request) => {
+const parseJson = async (req: CommonRequest) => {
   const buffer = await collectBody(req)
 
   // TODO: encoding
@@ -77,7 +77,7 @@ const parseJson = async (req: Request) => {
   }
 }
 
-const parseForm = async (req: Request) => {
+const parseForm = async (req: CommonRequest) => {
   const buffer = await collectBody(req)
 
   // TODO: encoding
@@ -95,7 +95,7 @@ const parseForm = async (req: Request) => {
   return queryObject
 }
 
-const parseMultipart = async (req: Request) => {
+const parseMultipart = async (req: CommonRequest) => {
   const form = formidable({ multiples: true })
 
   // @ts-expect-error Http2ServerRequest 缺少的 headersDistinct trailersDistinct 用不到
@@ -104,7 +104,7 @@ const parseMultipart = async (req: Request) => {
   return { fields, files }
 }
 
-const parseUrl = (req: Request) => {
+const parseUrl = (req: CommonRequest) => {
   const { query, pathname } = url.parse(req.url || '/')
   const searchParams = [...new URLSearchParams(query || '').entries()]
   const queryObject: Record<string, undefined | string | string[]> = {}
@@ -123,7 +123,7 @@ const parseUrl = (req: Request) => {
   }
 }
 
-const parser = async <T extends Request, D extends Response>(ctx: Context<T, D>) => {
+const parser = async <T extends CommonRequest, D extends CommonResponse>(ctx: Context<T, D>) => {
   const { query, pathname } = parseUrl(ctx.req)
 
   const contentType = getContentType(ctx.req.headers['content-type'] || '')

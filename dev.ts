@@ -16,13 +16,13 @@ app.addHook('onError', (ctx, err) => {
 })
 
 app.addPlugin((rui, options) => {
-  rui.get('/user', (ctx) => {
+  rui.router.get('/user', (ctx) => {
     ctx.body = 'get zhangsan'
   })
-  rui.post('/user', (ctx) => {
+  rui.router.post('/user', (ctx) => {
     ctx.body = 'post zhangsan'
   })
-  rui.delete('/user/uu', async (ctx, next) => {
+  rui.router.delete('/user/uu', async (ctx, next) => {
     console.log(1)
     await next()
     console.log(4)
@@ -33,7 +33,7 @@ app.addPlugin((rui, options) => {
   }, (ctx) => {
     ctx.body = 'delete zhangsan'
   })
-  rui.all('/test', (ctx) => {
+  rui.router.all('/test', (ctx) => {
     ctx.body = 'all test'
   })
   // rui.all('*', async ctx => {

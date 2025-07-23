@@ -1,24 +1,49 @@
 import context from '../context/index.js'
 import parser from '../parser/index.js'
-import type { Context, Middleware, Request, Response, AppOptions, HookType, AddHookFunction, Plugin, PluginOptions, HttpMethod, RouteHandler, RouteFunction } from '../type'
+import Router from '../router/index.js'
+import type {
+  Context,
+  Middleware,
+  CommonRequest,
+  CommonResponse,
+  AppOptions,
+  HookType,
+  AddHookFunction,
+  Plugin,
+  PluginOptions,
+  HttpMethod
+} from '../type'
 
-const methods: HttpMethod[] = ['delete', 'get', 'head', 'patch', 'post', 'put', 'options']
-interface RouteNode<T extends Request, D extends Response> {
-  handler?: RouteHandler<T, D>;
-  params?: string;
-  children: Map<string, RouteNode<T, D>>;
-  wildcard?: RouteNode<T, D>;
-}
+// export interface AddHookFunction<T extends CommonRequest, D extends CommonResponse, U> {
+//   (name: Exclude<HookType, 'onError'>, fn: (ctx: Context<T, D>) => void): U;
+//   (name: 'onError', fn: (ctx: Context<T, D>, err: Error) => void): U;
+// }
 
-abstract class App<RequestType extends Request, ResponseType extends Response> {
-  private context: Context<RequestType, ResponseType>
-  private middlewares: Middleware<RequestType, ResponseType>[]
-  private hooks: Record<HookType, AddHookFunction<RequestType, Response, this>[]>
-  private plugins: [Plugin<this>, PluginOptions][]
-  private routes: Map<HttpMethod, RouteNode<RequestType, ResponseType>>
+abstract class App<T extends CommonRequest, D extends CommonResponse> {
+  private context!: Context<T, D>
+  private middlewares!: Middleware<T, D>[]
+  private hooks!: Record<HookType, AddHookFunction<T, D, this>[]>
+  private plugins!: [Plugin<this>, PluginOptions][]
+
+  public router!: Omit<Router<T, D>, 'findRoute'>
 
   constructor (options?: AppOptions) {
+    this.initContext()
+    this.initMiddlewares()
+    this.initHooks()
+    this.initPlugins()
+    this.initRouter()
+  }
+
+  private initContext = () => {
+    this.context = Object.create(context) as Context<T, D>
+  }
+
+  private initMiddlewares = () => {
     this.middlewares = []
+  }
+
+  private initHooks = () => {
     this.hooks = {
       onRequest: [],
       preParsing: [],
@@ -27,99 +52,24 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
       onResponse: [],
       onError: []
     }
+  }
+
+  private initPlugins = () => {
     this.plugins = []
-    this.routes = new Map()
-    methods.forEach(method => {
-      this.routes.set(method, { children: new Map() })
-    })
-    this.context = Object.create(context) as Context<RequestType, ResponseType>
   }
 
-  private parsePath (path: string): string[] {
-    return path.split('/').filter(segment => segment.length > 0)
+  private initRouter = () => {
+    this.router = new Router<T, D>()
   }
 
-  private route = (method: HttpMethod, path: string, ...args: [...Middleware<RequestType, ResponseType>[], RouteHandler<RequestType, ResponseType>]) => {
-    const segments = this.parsePath(path)
-    let currentNode = this.routes.get(method)!
-
-    for (const segment of segments) {
-      if (segment.startsWith(':')) {
-        const paramName = segment.slice(1)
-
-        if (!currentNode.params) {
-          currentNode.params = paramName
-          currentNode.children.set('$param', { children: new Map() })
-        }
-
-        // 移动到参数节点
-        currentNode = currentNode.children.get('$param')!
-      } else if (segment === '*') {
-        if (!currentNode.wildcard) {
-          currentNode.wildcard = { children: new Map() }
-        }
-        currentNode = currentNode.wildcard
-      } else {
-        if (!currentNode.children.has(segment)) {
-          currentNode.children.set(segment, { children: new Map() })
-        }
-        currentNode = currentNode.children.get(segment)!
-      }
-    }
-
-    currentNode.handler = this.compose(args)
-  }
-
-  private findRoute = (method: HttpMethod, path: string) => {
-    if (!method || !methods.includes(method)) {
-      return {}
-    }
-
-    const segments = this.parsePath(path)
-    const currentNode = this.routes.get(method)
-    const params: Record<string, string> = {}
-
-    if (!currentNode) {
-      return {}
-    }
-
-    let node: RouteNode<RequestType, ResponseType> | undefined = currentNode
-
-    for (const segment of segments) {
-      if (node.children.has(segment)) {
-        node = node.children.get(segment)
-      } else if (node.params) {
-        params[node.params] = segment
-        node = node.children.get('$param')
-      } else if (node.wildcard) {
-        node = node.wildcard
-      } else {
-        return {}
-      }
-
-      if (!node) {
-        return {}
-      }
-    }
-
-    if (!node.handler && node.wildcard) {
-      node = node.wildcard
-    }
-
-    return {
-      handler: node.handler,
-      params
-    }
-  }
-
-  private executeHooks = async (name: HookType, ctx: Context<RequestType, ResponseType>, err?: Error) => {
+  private executeHooks = async (name: HookType, ctx: Context<T, D>, err?: Error) => {
     // @ts-expect-error 触发onError时 err一定存在
     const promisis = this.hooks[name].map(fn => fn(ctx, err))
     await Promise.all(promisis)
   }
 
-  private compose = (middlewares: Middleware<RequestType, ResponseType>[]) => {
-    const dispatch = (ctx: Context<RequestType, ResponseType>, i: number = 0): Promise<void> => {
+  private compose = (middlewares: Middleware<T, D>[]) => {
+    const dispatch = (ctx: Context<T, D>, i: number = 0): Promise<void> => {
       if (middlewares.length === i) {
         return Promise.resolve()
       }
@@ -137,7 +87,7 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
     }
   }
 
-  private handleResponse = async (ctx: Context<RequestType, ResponseType>) => {
+  private handleResponse = async (ctx: Context<T, D>) => {
     ctx.res.statusCode = 404
     if (ctx.body != null) {
       ctx.res.statusCode = 200
@@ -154,7 +104,7 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
     await this.executeHooks('onResponse', ctx)
   }
 
-  private executeHandler = async (ctx: Context<RequestType, ResponseType>) => {
+  private executeHandler = async (ctx: Context<T, D>) => {
     await this.executeHooks('preParsing', ctx)
 
     await this.compose([
@@ -162,7 +112,7 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
       async (_ctx) => {
         const { pathname, query, data } = await parser(_ctx)
         const method = (_ctx.req.method || '').toLowerCase() as HttpMethod
-        const { params = {}, handler } = this.findRoute(method, pathname)
+        const { params = {}, handler } = (this.router as Router<T, D>).findRoute(method, pathname)
         _ctx.params = params
         _ctx.pathname = pathname
         _ctx.query = query
@@ -178,8 +128,8 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
     ])(ctx)
   }
 
-  protected callback = async (req: RequestType, res: ResponseType) => {
-    const ctx = Object.create(this.context) as Context<RequestType, ResponseType>
+  protected callback = async (req: T, res: D) => {
+    const ctx = Object.create(this.context) as Context<T, D>
     ctx.req = req
     ctx.res = res
 
@@ -201,7 +151,7 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
     }
   }
 
-  addMiddlewares = (fn: Middleware<RequestType, ResponseType>) => {
+  addMiddlewares = (fn: Middleware<T, D>) => {
     if (typeof fn !== 'function') {
       throw new Error('middleware must be a function!')
     }
@@ -209,9 +159,9 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
     return this
   }
 
-  addHook: AddHookFunction<RequestType, ResponseType, this> = (name, fn) => {
+  addHook: AddHookFunction<T, D, this> = (name, fn) => {
     if (typeof fn !== 'function') {
-      throw new Error('hook must be a function!')
+      throw new Error('hook callback must be a function!')
     }
     if (!this.hooks[name]) {
       throw new Error('unknown hook name!')
@@ -224,44 +174,6 @@ abstract class App<RequestType extends Request, ResponseType extends Response> {
   addPlugin = (fn: Plugin<this>, options?: PluginOptions) => {
     this.plugins.push([fn, options || {}])
     return this
-  }
-
-  delete: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
-    this.route('delete', path, ...args)
-  }
-
-  get: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
-    this.route('get', path, ...args)
-  }
-
-  head: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
-    this.route('head', path, ...args)
-  }
-
-  patch: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
-    this.route('patch', path, ...args)
-  }
-
-  post: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
-    this.route('post', path, ...args)
-  }
-
-  put: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
-    this.route('put', path, ...args)
-  }
-
-  options: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
-    this.route('options', path, ...args)
-  }
-
-  all: RouteFunction<RequestType, ResponseType> = (path, ...args) => {
-    this.route('delete', path, ...args)
-    this.route('get', path, ...args)
-    this.route('head', path, ...args)
-    this.route('patch', path, ...args)
-    this.route('post', path, ...args)
-    this.route('put', path, ...args)
-    this.route('options', path, ...args)
   }
 }
 
