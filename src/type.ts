@@ -1,3 +1,4 @@
+import cookie from 'cookie'
 import http from 'node:http'
 import http2 from 'node:http2'
 import https from 'node:https'
@@ -26,16 +27,19 @@ export interface Context<T extends CommonRequest, D extends CommonResponse> {
   protocol: 'http' | 'https';
   pathname: string;
   query: Record<string, undefined | string | string[]>;
-  host?: string;
+  host: string;
   params: Record<string, string>;
   body: unknown;
-  
-  /**
-   * 返回值
-   */
-  data: unknown;
-
-  // setHeader: (key: string, value: string, parameters?: Record<string, string>) => void;
+  responseData: unknown;
+  send: (chunk: any) => this;
+  code: (statusCode: number) => this;
+  setHeader: (name: string, value: number | string | readonly string[]) => void;
+  setHeaders: (headers: Record<string, number | string | readonly string[]>) => void;
+  setCookie: (name: string, val: string, options?: cookie.SerializeOptions) => void;
+  getCookie: (name: string) => string | undefined;
+  getCookies: () => Record<string, string | undefined>;
+  deleteCookie: (name: string) => void;
+  clearCookie: () => void;
 }
 
 export type HttpContext = Context<HttpRequest, HttpResponse>

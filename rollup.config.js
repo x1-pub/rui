@@ -15,6 +15,7 @@ const external = [
   'external',
   'formidable',
   'mime-types',
+  'cookie',
 ]
 
 export default [

@@ -15,7 +15,7 @@ abstract class ReplyResolver {
 
     let contentType: string | undefined
 
-    switch (typeof ctx.data) {
+    switch (typeof ctx.responseData) {
       case 'function':
       case 'symbol':
       case 'bigint':
@@ -25,9 +25,9 @@ abstract class ReplyResolver {
         contentType = mime.lookup('text') || 'text/plain'
         break
       case 'object':
-        if (Buffer.isBuffer(ctx.data)) {
+        if (Buffer.isBuffer(ctx.responseData)) {
           contentType = mime.lookup('bin') || 'application/octet-stream'
-        } else if (ctx.data !== null) {
+        } else if (ctx.responseData !== null) {
           contentType = mime.lookup('json') || 'application/json'
         }
     }
@@ -47,29 +47,29 @@ abstract class ReplyResolver {
     }
 
     // 200: default or set 200
-    return ctx.data == null ? 404 : 200
+    return ctx.responseData == null ? 404 : 200
   }
 
   static data = <T extends CommonRequest, D extends CommonResponse>(ctx: Context<T, D>) => {
-    let data: string | Buffer | null = null
+    let responseData: string | Buffer | null = null
 
-    switch (typeof ctx.data) {
+    switch (typeof ctx.responseData) {
       case 'function':
       case 'symbol':
       case 'bigint':
       case 'boolean':
       case 'number':
       case 'string':
-        data = String(ctx.data)
+        responseData = String(ctx.responseData)
         break
       case 'object':
-        if (Buffer.isBuffer(ctx.data)) {
-          data = ctx.data
-        } else if (ctx.data != null) {
-          data = JSON.stringify(ctx.data)
+        if (Buffer.isBuffer(ctx.responseData)) {
+          responseData = ctx.responseData
+        } else if (ctx.responseData != null) {
+          responseData = JSON.stringify(ctx.responseData)
         }
     }
-    return data
+    return responseData
   }
 }
 

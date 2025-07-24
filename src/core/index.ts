@@ -89,21 +89,19 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
 
     const contentType = ReplyResolver.contentType(ctx)
     const status = ReplyResolver.status(ctx)
-    const data = ReplyResolver.data(ctx)
+    const responseData = ReplyResolver.data(ctx)
 
     ctx.res.setHeader('content-type', contentType || '')
     ctx.res.statusCode = status
-    ctx.data = data
+    ctx.responseData = responseData
   }
 
   private send = (ctx: Context<T, D>) => {
     this.executeHooks('onPreResponse', ctx)
 
-    ctx.res.end(ctx.data as any)
-
-    ctx.res.on('finish', () => {
-      this.executeHooks('onResponse', ctx)
-    })
+    if (ctx.res.writable && !ctx.res.writableEnded) {
+      ctx.res.end(ctx.responseData as any)
+    }
   }
 
   private handleRequest = async (ctx: Context<T, D>) => {
@@ -141,6 +139,10 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     const ctx = Object.create(this.context) as Context<T, D>
     ctx.req = req
     ctx.res = res
+
+    ctx.res.on('finish', () => {
+      this.executeHooks('onResponse', ctx)
+    })
 
     try {
       await this.executeHooks('onRequest', ctx)
