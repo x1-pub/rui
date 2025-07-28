@@ -15,7 +15,7 @@ import type {
   HttpMethod,
   HookFunction,
   ErrorHookFunction,
-  GlobalConfig,
+  GlobalConfig
 } from '../type'
 import { RuiError } from '../error/index.js'
 
@@ -36,7 +36,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   protected options: AppOptions & Partial<GlobalConfig>
   public router: Omit<Router<T, D>, 'findRoute'>
 
-  constructor(options?: AppOptions & Partial<GlobalConfig>) {
+  constructor (options?: AppOptions & Partial<GlobalConfig>) {
     this.context = Object.create(context) as Context<T, D>
     this.router = new Router<T, D>()
     this.options = {
@@ -106,15 +106,16 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   }
 
   private setResponseValue = (ctx: Context<T, D>) => {
-    const contentType = ReplyResolver.contentType(ctx)
-    const status = ReplyResolver.status(ctx)
     const data = ReplyResolver.data(ctx)
+    ctx._responseData = data
 
+    const status = ReplyResolver.status(ctx)
+    ctx.res.statusCode = status
+
+    const contentType = ReplyResolver.contentType(ctx)
     if (contentType) {
       ctx.res.setHeader('content-type', contentType)
     }
-    ctx.res.statusCode = status
-    ctx._responseData = data
 
     return data
   }

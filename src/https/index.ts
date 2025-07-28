@@ -3,22 +3,18 @@ import ServerFactory from '../core/factory.js'
 import type {
   HttpRequest,
   HttpResponse,
-  HttpsAppOptions,
-  HttpContext,
   Next,
-  HttpMiddleware,
+  HttpsAppOptions as RuiOptions,
+  HttpContext as Context,
+  HttpMiddleware as Middleware,
 } from '../type'
 
 type HttpsServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
 
-/**
- * HTTPS 服务器应用类
- */
-class HttpsApp extends ServerFactory<HttpRequest, HttpResponse, Server, HttpsAppOptions> {
-  constructor (options?: HttpsAppOptions) {
+class HttpsApp extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
+  constructor (options?: RuiOptions) {
     super(options)
 
-    // HTTPS 需要证书配置
     if (!options?.key || !options?.cert) {
       console.warn('HTTPS 服务器需要提供 key 和 cert 配置')
     }
@@ -32,20 +28,13 @@ class HttpsApp extends ServerFactory<HttpRequest, HttpResponse, Server, HttpsApp
     return super.listen(...args)
   }
 
-  /**
-   * 强制 HTTPS 中间件
-   */
   forceHttps = () => {
-    return (ctx: HttpContext, next: Next) => {
-      // 设置 HSTS 头部
+    return (ctx: Context, next: Next) => {
       ctx.setHeader('strict-transport-security', 'max-age=31536000; includeSubDomains')
       return next()
     }
   }
 
-  /**
-   * 安全头部中间件
-   */
   securityHeaders = (options: {
     contentSecurityPolicy?: string;
     xFrameOptions?: string;
@@ -59,7 +48,7 @@ class HttpsApp extends ServerFactory<HttpRequest, HttpResponse, Server, HttpsApp
       referrerPolicy = 'strict-origin-when-cross-origin'
     } = options
 
-    return (ctx: HttpContext, next: Next) => {
+    return (ctx: Context, next: Next) => {
       ctx.setHeaders({
         'content-security-policy': contentSecurityPolicy,
         'x-frame-options': xFrameOptions,
@@ -72,5 +61,5 @@ class HttpsApp extends ServerFactory<HttpRequest, HttpResponse, Server, HttpsApp
   }
 }
 
-export type { HttpRequest, HttpResponse, HttpsAppOptions, HttpContext, Next, HttpMiddleware }
+export type { Next,  RuiOptions, Context, Middleware }
 export default HttpsApp

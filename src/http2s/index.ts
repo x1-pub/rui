@@ -1,24 +1,20 @@
 import { createSecureServer, Http2SecureServer } from 'node:http2'
 import ServerFactory from '../core/factory.js'
 import type {
-  Http2Context,
-  Http2Middleware,
   Http2Request,
   Http2Response,
-  Http2sAppOptions,
   Next,
+  Http2sAppOptions as RuiOptions,
+  Http2Context as Context,
+  Http2Middleware as Middleware,
 } from '../type'
 
 type Http2sServerListenParameters = Parameters<ReturnType<typeof createSecureServer>['listen']>
 
-/**
- * HTTP/2 安全服务器应用类
- */
-class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureServer, Http2sAppOptions> {
-  constructor (options?: Http2sAppOptions) {
+class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureServer, RuiOptions> {
+  constructor (options?: RuiOptions) {
     super(options)
 
-    // HTTP/2 安全服务器需要证书配置
     if (!options?.key || !options?.cert) {
       console.warn('HTTP/2 安全服务器需要提供 key 和 cert 配置')
     }
@@ -36,8 +32,7 @@ class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureSe
    * HTTP/2 安全服务器推送中间件
    */
   secureServerPush = (resources: Array<{ path: string; headers?: Record<string, string> }>) => {
-    return async (ctx: Http2Context, next: Next) => {
-      // HTTP/2 安全服务器推送功能
+    return async (ctx: Context, next: Next) => {
       if (ctx.res.stream && typeof ctx.res.stream.pushStream === 'function') {
         for (const resource of resources) {
           try {
@@ -85,7 +80,7 @@ class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureSe
       permissionsPolicy = 'geolocation=(), microphone=(), camera=()'
     } = options
 
-    return (ctx: Http2Context, next: Next) => {
+    return (ctx: Context, next: Next) => {
       ctx.setHeaders({
         'strict-transport-security': strictTransportSecurity,
         'content-security-policy': contentSecurityPolicy,
@@ -104,7 +99,7 @@ class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureSe
    * TLS 配置验证中间件
    */
   tlsValidation = () => {
-    return (ctx: Http2Context, next: Next) => {
+    return (ctx: Context, next: Next) => {
       // 检查 TLS 连接信息
       const socket = ctx.req.socket as any
       if (socket.encrypted) {
@@ -128,7 +123,7 @@ class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureSe
    * HTTP/2 性能监控中间件
    */
   performanceMonitor = () => {
-    return (ctx: Http2Context, next: Next) => {
+    return (ctx: Context, next: Next) => {
       const startTime = Date.now()
 
       ctx.res.on('finish', () => {
@@ -141,5 +136,5 @@ class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureSe
   }
 }
 
-export type { Http2Request, Http2Response, Http2sAppOptions, Http2Context, Next, Http2Middleware }
+export type { Next,  RuiOptions, Context, Middleware }
 export default Http2sApp

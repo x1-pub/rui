@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer'
 import formidable from 'formidable'
 import url from 'node:url'
 import type { CommonRequest, CommonResponse, Context, RequestBody } from '../type'
+import { RuiError } from '../error'
 
 const defaultJsonTypes = [
   'application/json',
@@ -47,9 +48,7 @@ const collectBody = (req: CommonRequest, limit: number = 1024 * 1024): Promise<B
       size += chunk.length
 
       if (size > limit) {
-        const error = new Error('Payload too large') as any
-        error.statusCode = 413
-        error.code = 'PAYLOAD_TOO_LARGE'
+        const error = new RuiError('Payload too large', 413, 'PAYLOAD_TOO_LARGE')
         reject(error)
       }
     })
@@ -63,9 +62,7 @@ const collectBody = (req: CommonRequest, limit: number = 1024 * 1024): Promise<B
     })
 
     req.on('aborted', () => {
-      const error = new Error('Request aborted') as any
-      error.statusCode = 400
-      error.code = 'REQUEST_ABORTED'
+      const error = new RuiError('Request aborted', 400, 'REQUEST_ABORTED')
       reject(error)
     })
   })

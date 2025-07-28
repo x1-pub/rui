@@ -1,11 +1,11 @@
-import {
+import type {
   CommonRequest,
   CommonResponse,
   HttpMethod,
   Middleware,
   RouteFunction,
   RouteHandler,
-  Context,
+  Context
 } from '../type'
 import { RuiError } from '../error/index.js'
 
@@ -34,7 +34,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     })
   }
 
-  // 优化中间件组合逻辑
   private compose = (middlewares: Middleware<T, D>[]): RouteHandler<T, D> => {
     if (middlewares.length === 0) {
       return async () => {}
@@ -59,10 +58,8 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
 
         const fn = middlewares[i]
         if (i === middlewares.length - 1) {
-          // 最后一个是路由处理器，不需要 next
           await (fn as RouteHandler<T, D>)(ctx)
         } else {
-          // 中间件需要 next 函数
           await (fn as Middleware<T, D>)(ctx, () => dispatch(i + 1))
         }
       }
@@ -71,7 +68,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     }
   }
 
-  // 优化路径解析
   private parsePath (path: string): string[] {
     if (!path || path === '/') {
       return []
@@ -83,7 +79,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       .map(segment => decodeURIComponent(segment))
   }
 
-  // 验证路径格式
   private validatePath (path: string): void {
     if (typeof path !== 'string') {
       throw new RuiError('Route path must be a string', 500)
@@ -94,7 +89,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     }
   }
 
-  // 验证中间件和处理器
   private validateHandlers (args: any[]): void {
     if (args.length === 0) {
       throw new RuiError('Route must have at least one handler', 500)
@@ -114,10 +108,8 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     const segments = this.parsePath(path)
     let currentNode = this.routes.get(method)!
 
-    // 构建路由树
     for (const segment of segments) {
       if (segment.startsWith(':')) {
-        // 参数路由
         const paramName = segment.slice(1)
         if (!paramName) {
           throw new RuiError('Parameter name cannot be empty', 500)
@@ -134,13 +126,11 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
 
         currentNode = currentNode.paramChild
       } else if (segment === '*') {
-        // 通配符路由
         if (!currentNode.wildcardChild) {
           currentNode.wildcardChild = { children: new Map() }
         }
         currentNode = currentNode.wildcardChild
       } else {
-        // 静态路由
         if (!currentNode.children.has(segment)) {
           currentNode.children.set(segment, { children: new Map() })
         }
@@ -148,7 +138,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       }
     }
 
-    // 检查是否已存在处理器
     if (currentNode.handler) {
       console.warn(`Route ${method.toUpperCase()} ${path} is being overwritten`)
     }
@@ -156,7 +145,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     currentNode.handler = this.compose(args)
   }
 
-  // 优化路由查找算法
   findRoute = (method: HttpMethod, path: string): RouteMatch<T, D> => {
     if (!method || !methods.includes(method)) {
       return { params: {} }
@@ -172,20 +160,17 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     const params: Record<string, string> = {}
 
     const findMatch = (node: RouteNode<T, D>, segmentIndex: number): RouteNode<T, D> | null => {
-      // 如果所有段都匹配完了
       if (segmentIndex === segments.length) {
         return node.handler ? node : (node.wildcardChild || null)
       }
 
       const segment = segments[segmentIndex]
 
-      // 1. 优先匹配静态路由
       if (node.children.has(segment)) {
         const staticMatch = findMatch(node.children.get(segment)!, segmentIndex + 1)
         if (staticMatch) return staticMatch
       }
 
-      // 2. 匹配参数路由
       if (node.paramChild) {
         const paramMatch = findMatch(node.paramChild, segmentIndex + 1)
         if (paramMatch && node.paramChild.paramName) {
@@ -194,7 +179,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
         }
       }
 
-      // 3. 匹配通配符路由
       if (node.wildcardChild) {
         return node.wildcardChild
       }
@@ -210,7 +194,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     }
   }
 
-  // HTTP 方法路由注册
   delete: RouteFunction<T, D> = (path, ...args) => {
     this.route('delete', path, ...args)
   }
@@ -239,21 +222,18 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     this.route('options', path, ...args)
   }
 
-  // 注册所有 HTTP 方法
   all: RouteFunction<T, D> = (path, ...args) => {
     methods.forEach(method => {
       this.route(method, path, ...args)
     })
   }
 
-  // 添加路由组功能
   group = (prefix: string, callback: (router: Router<T, D>) => void): void => {
     this.validatePath(prefix)
 
     const groupRouter = new Router<T, D>()
     callback(groupRouter)
 
-    // 将组路由合并到主路由
     for (const [method, rootNode] of groupRouter.routes) {
       this.mergeRoutes(method, prefix, rootNode)
     }
@@ -263,7 +243,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     const prefixSegments = this.parsePath(prefix)
     let currentNode = this.routes.get(method)!
 
-    // 创建前缀路径
     for (const segment of prefixSegments) {
       if (!currentNode.children.has(segment)) {
         currentNode.children.set(segment, { children: new Map() })
@@ -271,7 +250,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       currentNode = currentNode.children.get(segment)!
     }
 
-    // 递归合并路由节点
     this.mergeNode(currentNode, sourceNode)
   }
 
@@ -284,7 +262,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       targetNode.paramName = sourceNode.paramName
     }
 
-    // 合并子节点
     for (const [key, childNode] of sourceNode.children) {
       if (!targetNode.children.has(key)) {
         targetNode.children.set(key, { children: new Map() })
@@ -292,7 +269,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       this.mergeNode(targetNode.children.get(key)!, childNode)
     }
 
-    // 合并参数子节点
     if (sourceNode.paramChild) {
       if (!targetNode.paramChild) {
         targetNode.paramChild = { children: new Map() }
@@ -300,7 +276,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       this.mergeNode(targetNode.paramChild, sourceNode.paramChild)
     }
 
-    // 合并通配符子节点
     if (sourceNode.wildcardChild) {
       if (!targetNode.wildcardChild) {
         targetNode.wildcardChild = { children: new Map() }
@@ -309,7 +284,6 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
     }
   }
 
-  // 获取所有注册的路由信息（用于调试）
   getRoutes = (): Array<{ method: string; path: string }> => {
     const routes: Array<{ method: string; path: string }> = []
 
@@ -330,17 +304,14 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       routes.push({ method: method.toUpperCase(), path: currentPath || '/' })
     }
 
-    // 静态路由
     for (const [segment, childNode] of node.children) {
       this.collectRoutes(method, `${currentPath}/${segment}`, childNode, routes)
     }
 
-    // 参数路由
     if (node.paramChild) {
       this.collectRoutes(method, `${currentPath}/:${node.paramChild.paramName}`, node.paramChild, routes)
     }
 
-    // 通配符路由
     if (node.wildcardChild) {
       this.collectRoutes(method, `${currentPath}/*`, node.wildcardChild, routes)
     }

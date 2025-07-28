@@ -1,6 +1,6 @@
 import mime from 'mime-types'
 import http from 'node:http'
-import { CommonRequest, CommonResponse, Context, ResponseData } from '../type'
+import type { CommonRequest, CommonResponse, Context, ResponseData } from '../type'
 
 abstract class ReplyResolver {
   static contentType = <T extends CommonRequest, D extends CommonResponse>(ctx: Context<T, D>): string | undefined => {
@@ -11,66 +11,42 @@ abstract class ReplyResolver {
       if (parsedType) {
         return parsedType
       }
-      console.warn(`设置了无效的 Content-Type: ${typeString}`)
     }
 
-    return this.inferContentType(ctx._responseData)
+    const type = this.inferContentType(ctx._responseData)
+    if (explicitType) {
+      console.warn(`The invalid Content-Type: ${explicitType} has been changed to ${type}.`)
+    }
+    return type
   }
 
-
-  private static inferContentType(data: ResponseData): string | undefined {
-    if (data === null || data === undefined) {
+  private static inferContentType (data: ResponseData): string | undefined {
+    if (data == null) {
       return undefined
     }
 
     switch (typeof data) {
       case 'string':
-        if (this.isHtmlString(data)) {
-          return 'text/html; charset=utf-8'
-        }
-        if (this.isJsonString(data)) {
-          return 'application/json; charset=utf-8'
-        }
-        return 'text/plain; charset=utf-8'
-
       case 'number':
       case 'boolean':
       case 'bigint':
+      case 'symbol':
+      case 'function':
         return 'text/plain; charset=utf-8'
-
       case 'object':
         if (Buffer.isBuffer(data)) {
           return 'application/octet-stream'
         }
         return 'application/json; charset=utf-8'
-
-      case 'function':
-      case 'symbol':
-        return 'text/plain; charset=utf-8'
-
       default:
         return 'text/plain; charset=utf-8'
     }
   }
 
-  private static isHtmlString(str: string): boolean {
-    const trimmed = str.trim()
-    return trimmed.startsWith('<!DOCTYPE') ||
-      trimmed.startsWith('<html') ||
-      /<\/?[a-z][\s\S]*>/i.test(trimmed)
-  }
-
-  private static isJsonString(str: string): boolean {
-    const trimmed = str.trim()
-    return (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-      (trimmed.startsWith('[') && trimmed.endsWith(']'))
-  }
-
   static status = <T extends CommonRequest, D extends CommonResponse>(ctx: Context<T, D>): number => {
     let statusCode = ctx.res.statusCode
-
-    if (!this.isValidStatusCode(statusCode)) {
-      console.warn(`设置了无效的状态码: ${statusCode}，使用默认值 200`)
+    const valid = this.isValidStatusCode(statusCode)
+    if (!valid) {
       statusCode = 200
     }
 
@@ -78,18 +54,22 @@ abstract class ReplyResolver {
       return statusCode
     }
 
-    return this.inferStatusCode(ctx._responseData)
+    const code = this.inferStatusCode(ctx._responseData)
+    if (!valid) {
+      console.warn(`Set an invalid status code: ${statusCode}, has been changed to  ${code}.`)
+    }
+    return code
   }
 
-  private static isValidStatusCode(code: number): boolean {
+  private static isValidStatusCode (code: number): boolean {
     return typeof code === 'number' &&
       code >= 100 &&
       code <= 599 &&
       Object.prototype.hasOwnProperty.call(http.STATUS_CODES, code)
   }
 
-  private static inferStatusCode(data: ResponseData): number {
-    if (data === null || data === undefined) {
+  private static inferStatusCode (data: ResponseData): number {
+    if (data == null) {
       return 404
     }
 
@@ -101,51 +81,43 @@ abstract class ReplyResolver {
   }
 
   static data = <T extends CommonRequest, D extends CommonResponse>(ctx: Context<T, D>): string | Buffer | null => {
-    const { _responseData } = ctx
-
-    if (_responseData === null || _responseData === undefined) {
+    if (ctx._responseData == null) {
       return null
     }
 
     try {
-      return this.serializeData(_responseData)
+      return this.serializeData(ctx._responseData)
     } catch (error) {
-      console.error('序列化响应数据失败:', error)
+      console.error('Serialization response data failed:', error)
       const errorResponse = {
         error: 'Internal Server Error',
-        message: '响应数据序列化失败'
+        message: 'Serialization response data failed'
       }
       return JSON.stringify(errorResponse)
     }
   }
 
-  private static serializeData(data: ResponseData): string | Buffer | null {
+  private static serializeData (data: ResponseData): string | Buffer | null {
     switch (typeof data) {
       case 'string':
         return data
-
       case 'number':
       case 'boolean':
       case 'bigint':
       case 'symbol':
         return String(data)
-
       case 'function':
         return data.toString()
-
       case 'object':
         if (data === null) {
           return null
         }
-
         if (Buffer.isBuffer(data)) {
           return data
         }
-
         if (data instanceof Date) {
           return data.toISOString()
         }
-
         if (data instanceof Error) {
           return JSON.stringify({
             name: data.name,
@@ -153,15 +125,13 @@ abstract class ReplyResolver {
             stack: data.stack
           })
         }
-
         return JSON.stringify(data, this.jsonReplacer, 2)
-
       default:
         return String(data)
     }
   }
 
-  private static jsonReplacer(key: string, value: any): any {
+  private static jsonReplacer (key: string, value: any): any {
     if (typeof value === 'bigint') {
       return value.toString()
     }
