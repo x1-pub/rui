@@ -6,7 +6,7 @@ import type {
   Next,
   Http2sAppOptions as RuiOptions,
   Http2Context as Context,
-  Http2Middleware as Middleware,
+  Http2Middleware as Middleware
 } from '../type'
 
 type Http2sServerListenParameters = Parameters<ReturnType<typeof createSecureServer>['listen']>
@@ -136,5 +136,5 @@ class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureSe
   }
 }
 
-export type { Next,  RuiOptions, Context, Middleware }
+export type { Next, RuiOptions, Context, Middleware }
 export default Http2sApp

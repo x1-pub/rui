@@ -6,7 +6,7 @@ import type {
   Next,
   HttpsAppOptions as RuiOptions,
   HttpContext as Context,
-  HttpMiddleware as Middleware,
+  HttpMiddleware as Middleware
 } from '../type'
 
 type HttpsServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
@@ -61,5 +61,5 @@ class HttpsApp extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptio
   }
 }
 
-export type { Next,  RuiOptions, Context, Middleware }
+export type { Next, RuiOptions, Context, Middleware }
 export default HttpsApp
