@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import formidable from 'formidable'
 import url from 'node:url'
-import type { CommonRequest, CommonResponse, Context } from '../type'
+import type { CommonRequest, CommonResponse, Context, RequestBody } from '../type'
 
 const defaultJsonTypes = [
   'application/json',
@@ -12,7 +12,12 @@ const defaultJsonTypes = [
   'application/scim+json'
 ]
 
-const getContentType = (type: string) => {
+interface ParserConfig {
+  bodyLimit: number;
+  encoding: BufferEncoding;
+}
+
+const getContentType = (type: string): string | undefined => {
   if (defaultJsonTypes.includes(type)) {
     return 'json'
   }
@@ -28,22 +33,24 @@ const getContentType = (type: string) => {
   if (type.startsWith('multipart/')) {
     return 'multipart'
   }
+
+  return undefined
 }
 
-const collectBody = (req: CommonRequest): Promise<Buffer> => {
+const collectBody = (req: CommonRequest, limit: number = 1024 * 1024): Promise<Buffer> => {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
     let size = 0
-
-    // TODO: limit
-    const limit = 1024 * 1024
 
     req.on('data', (chunk: Buffer) => {
       chunks.push(chunk)
       size += chunk.length
 
       if (size > limit) {
-        reject(new Error('Payload too large'))
+        const error = new Error('Payload too large') as any
+        error.statusCode = 413
+        error.code = 'PAYLOAD_TOO_LARGE'
+        reject(error)
       }
     })
 
@@ -54,93 +61,148 @@ const collectBody = (req: CommonRequest): Promise<Buffer> => {
     req.on('error', (err) => {
       reject(err)
     })
+
+    req.on('aborted', () => {
+      const error = new Error('Request aborted') as any
+      error.statusCode = 400
+      error.code = 'REQUEST_ABORTED'
+      reject(error)
+    })
   })
 }
 
-const parseText = async (req: CommonRequest) => {
-  const buffer = await collectBody(req)
-
-  // TODO: encoding
-  return buffer.toString('utf-8')
+const parseText = async (req: CommonRequest, config: ParserConfig): Promise<string> => {
+  const buffer = await collectBody(req, config.bodyLimit)
+  return buffer.toString(config.encoding)
 }
 
-const parseJson = async (req: CommonRequest) => {
-  const buffer = await collectBody(req)
+const parseJson = async (req: CommonRequest, config: ParserConfig): Promise<Record<string, unknown>> => {
+  const buffer = await collectBody(req, config.bodyLimit)
+  const content = buffer.toString(config.encoding)
 
-  // TODO: encoding
-  const content = buffer.toString('utf-8')
+  if (!content.trim()) {
+    return {}
+  }
 
   try {
-    return JSON.parse(content) as Record<string, unknown>
+    const parsed = JSON.parse(content)
+    if (typeof parsed !== 'object' || parsed === null) {
+      throw new Error('JSON must be an object')
+    }
+    return parsed as Record<string, unknown>
   } catch (err) {
-    throw new Error('Invalid JSON payload')
+    const error = new Error('Invalid JSON payload') as any
+    error.statusCode = 400
+    error.code = 'INVALID_JSON'
+    error.originalError = err
+    throw error
   }
 }
 
-const parseForm = async (req: CommonRequest) => {
-  const buffer = await collectBody(req)
+const parseForm = async (req: CommonRequest, config: ParserConfig): Promise<Record<string, undefined | string | string[]>> => {
+  const buffer = await collectBody(req, config.bodyLimit)
+  const content = buffer.toString(config.encoding)
 
-  // TODO: encoding
-  const content = buffer.toString('utf-8')
-  const searchParams = [...new URLSearchParams(content).entries()]
-  const queryObject: Record<string, undefined | string | string[]> = {}
-  for (const [key, value] of searchParams) {
-    if (!queryObject[key]) {
-      queryObject[key] = value
-      continue
+  if (!content.trim()) {
+    return {}
+  }
+
+  try {
+    const searchParams = new URLSearchParams(content)
+    const queryObject: Record<string, undefined | string | string[]> = {}
+
+    for (const [key, value] of searchParams.entries()) {
+      if (!queryObject[key]) {
+        queryObject[key] = value
+      } else if (Array.isArray(queryObject[key])) {
+        (queryObject[key] as string[]).push(value)
+      } else {
+        queryObject[key] = [queryObject[key] as string, value]
+      }
     }
 
-    queryObject[key] = [value, ...queryObject[key]]
+    return queryObject
+  } catch (err) {
+    const error = new Error('Invalid form data') as any
+    error.statusCode = 400
+    error.code = 'INVALID_FORM'
+    error.originalError = err
+    throw error
   }
-  return queryObject
 }
 
-const parseMultipart = async (req: CommonRequest) => {
-  const form = formidable({ multiples: true })
+const parseMultipart = async (req: CommonRequest, config: ParserConfig): Promise<{ fields: any; files: any }> => {
+  try {
+    const form = formidable({
+      multiples: true,
+      maxFileSize: config.bodyLimit,
+      maxTotalFileSize: config.bodyLimit
+    })
 
-  // @ts-expect-error Http2ServerRequest 缺少的 headersDistinct trailersDistinct 用不到
-  const [fields, files] = await form.parse(req)
+    // @ts-expect-error
+    // http2.Http2ServerRequest is missing headersDistinct trailersDistinct is not used
+    const [fields, files] = await form.parse(req)
 
-  return { fields, files }
+    return { fields, files }
+  } catch (err) {
+    const error = new Error('Invalid multipart data') as any
+    error.statusCode = 400
+    error.code = 'INVALID_MULTIPART'
+    error.originalError = err
+    throw error
+  }
 }
 
-const parseUrl = (req: CommonRequest) => {
-  const { query, pathname } = url.parse(req.url || '/')
-  const searchParams = [...new URLSearchParams(query || '').entries()]
-  const queryObject: Record<string, undefined | string | string[]> = {}
-  for (const [key, value] of searchParams) {
-    if (!queryObject[key]) {
-      queryObject[key] = value
-      continue
+const parseUrl = (req: CommonRequest): { pathname: string; query: Record<string, undefined | string | string[]> } => {
+  try {
+    const { query, pathname } = url.parse(req.url || '/', true)
+    const queryObject: Record<string, undefined | string | string[]> = {}
+
+    if (query && typeof query === 'object') {
+      for (const [key, value] of Object.entries(query)) {
+        if (Array.isArray(value)) {
+          queryObject[key] = value.filter(v => typeof v === 'string')
+        } else if (typeof value === 'string') {
+          queryObject[key] = value
+        }
+      }
     }
 
-    queryObject[key] = [value, ...queryObject[key]]
-  }
-
-  return {
-    pathname: pathname || '/',
-    query: queryObject
+    return {
+      pathname: pathname || '/',
+      query: queryObject
+    }
+  } catch (err) {
+    const error = new Error('Invalid URL') as any
+    error.statusCode = 400
+    error.code = 'INVALID_URL'
+    error.originalError = err
+    throw error
   }
 }
 
-const parser = async <T extends CommonRequest, D extends CommonResponse>(ctx: Context<T, D>) => {
+const parser = async <T extends CommonRequest, D extends CommonResponse>(
+  ctx: Context<T, D>,
+  config: ParserConfig = { bodyLimit: 1024 * 1024, encoding: 'utf-8' }
+): Promise<{ pathname: string; query: Record<string, undefined | string | string[]>; body: RequestBody }> => {
   const { query, pathname } = parseUrl(ctx.req)
 
-  const contentType = getContentType(ctx.req.headers['content-type'] || '')
-  let body: unknown
+  const contentTypeHeader = ctx.req.headers['content-type'] || ''
+  const contentType = getContentType(contentTypeHeader.split(';')[0].trim())
+
+  let body: RequestBody = null
+
   if (contentType === 'text') {
-    body = await parseText(ctx.req)
+    body = await parseText(ctx.req, config) as RequestBody
   } else if (contentType === 'json') {
-    body = await parseJson(ctx.req)
-    ctx.body = body
+    body = await parseJson(ctx.req, config) as RequestBody
   } else if (contentType === 'form') {
-    body = await parseForm(ctx.req)
-    ctx.body = body
+    body = await parseForm(ctx.req, config) as RequestBody
   } else if (contentType === 'multipart') {
-    body = await parseMultipart(ctx.req)
-    ctx.body = body
-  } else {
-    body = await collectBody(ctx.req)
+    body = await parseMultipart(ctx.req, config) as RequestBody
+  } else if (ctx.req.headers['content-length'] && parseInt(ctx.req.headers['content-length']) > 0) {
+    // For requests of unknown type but with content length, read as Buffer.
+    body = await collectBody(ctx.req, config.bodyLimit)
   }
 
   return {

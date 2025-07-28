@@ -56,14 +56,17 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^11.1.5",
     "@types/formidable": "^3.4.5",
+    "@types/jest": "^30.0.0",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^18.19.119",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
+    "jest": "^30.0.5",
     "nodemon": "^3.1.10",
     "rollup": "^4.45.1",
     "rollup-plugin-dts": "^6.2.1",
     "standard": "^17.1.2",
+    "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "tslib": "^2.6.2",
     "typescript": "^5.4.2"
@@ -75,6 +78,9 @@
     "parser": "@typescript-eslint/parser",
     "plugins": [
       "@typescript-eslint"
+    ],
+    "globals": [
+      "BufferEncoding"
     ]
   },
   "files": [
