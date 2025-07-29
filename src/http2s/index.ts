@@ -1,24 +1,33 @@
 import { createSecureServer, Http2SecureServer } from 'node:http2'
-
-import App from '../core/index.js'
-import type { Http2sRequest, Http2sResponse, Http2sAppOptions, Http2sContext, Next, Http2sMiddleware } from '../type'
+import ServerFactory from '../core/factory.js'
+import type {
+  Http2Request,
+  Http2Response,
+  Next,
+  Http2sAppOptions as RuiOptions,
+  Http2Context as Context,
+  Http2Middleware as Middleware
+} from '../type'
 
 type Http2sServerListenParameters = Parameters<ReturnType<typeof createSecureServer>['listen']>
 
-class Http2sApp extends App<Http2sRequest, Http2sResponse> {
-  private option: Http2sAppOptions
+class Http2sApp extends ServerFactory<Http2Request, Http2Response, Http2SecureServer, RuiOptions> {
+  constructor (options?: RuiOptions) {
+    super(options)
 
-  constructor (option?: Http2sAppOptions) {
-    super(option)
-    this.option = option || {}
+    if (!options?.key || !options?.cert) {
+      console.warn('HTTP/2 secure server requires key and cert configuration.')
+    }
   }
 
-  listen = (...args: Http2sServerListenParameters): Http2SecureServer => {
-    const server = createSecureServer(this.option, this.callback)
-    server.on('listening', this.executePlugins)
-    return server.listen(...args)
+  protected createServer (): Http2SecureServer {
+    return createSecureServer(this.options, this.callback)
+  }
+
+  listen (...args: Http2sServerListenParameters): Http2SecureServer {
+    return super.listen(...args)
   }
 }
 
-export type { Http2sRequest, Http2sResponse, Http2sAppOptions, Http2sContext, Next, Http2sMiddleware }
+export type { Next, RuiOptions, Context, Middleware }
 export default Http2sApp

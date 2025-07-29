@@ -50,28 +50,28 @@ import Rui from '@x1.pub/rui' // equals: import Rui from '@x1.pub/rui/http'
 
 const rui = new Rui()
 
-rui.addMiddlewares(async (ctx, next) => {
+rui.addMiddleware(async (ctx, next) => {
   console.log(`hi, ${ctx.pathname}`)
   await next()
   console.log(`over, ${ctx.pathname}`)
 })
 
-rui.router.get('/', (ctx) => {
-  ctx.data = 'rui!'
+rui.router.get('/', async (ctx) => {
+  ctx.send('rui!')
 })
 
 rui.addPlugin((rui) => {
   rui.router.all('/test', (ctx) => {
-    ctx.data = 'test!'
+    ctx.send('test!')
   })
 
   rui.router.post('/user/:id', (ctx, next) => {}, (ctx) => {
-    ctx.data = ctx.query.id
+    ctx.send(ctx.query.id)
   })
 }, { prefix: '/api/v1'})
 
 rui.addHook('onError', (ctx, err) => {
-  ctx.data = err
+  ctx.send(err)
 })
 
 rui.listen(8888)

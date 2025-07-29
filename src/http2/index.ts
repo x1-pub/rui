@@ -1,24 +1,25 @@
 import { createServer, Http2Server } from 'node:http2'
-
-import App from '../core/index.js'
-import type { Http2Request, Http2Response, Http2AppOptions, Http2Context, Next, Http2Middleware } from '../type'
+import ServerFactory from '../core/factory.js'
+import type {
+  Http2Request,
+  Http2Response,
+  Next,
+  Http2AppOptions as RuiOptions,
+  Http2Context as Context,
+  Http2Middleware as Middleware
+} from '../type'
 
 type Http2ServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
 
-class Http2App extends App<Http2Request, Http2Response> {
-  private option: Http2AppOptions
-
-  constructor (option?: Http2AppOptions) {
-    super(option)
-    this.option = option || {}
+class Http2App extends ServerFactory<Http2Request, Http2Response, Http2Server, RuiOptions> {
+  protected createServer (): Http2Server {
+    return createServer(this.options, this.callback)
   }
 
-  listen = (...args: Http2ServerListenParameters): Http2Server => {
-    const server = createServer(this.option, this.callback)
-    server.on('listening', this.executePlugins)
-    return server.listen(...args)
+  listen (...args: Http2ServerListenParameters): Http2Server {
+    return super.listen(...args)
   }
 }
 
-export type { Http2Request, Http2Response, Http2AppOptions, Http2Context, Next, Http2Middleware }
+export type { Next, RuiOptions, Context, Middleware }
 export default Http2App

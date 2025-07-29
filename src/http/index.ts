@@ -1,25 +1,25 @@
 import { createServer, Server } from 'node:http'
-
-import App from '../core/index.js'
-import type { HttpRequest, HttpResponse, HttpAppOptions, HttpContext, Next, HttpMiddleware } from '../type'
+import ServerFactory from '../core/factory.js'
+import type {
+  HttpRequest,
+  HttpResponse,
+  Next,
+  HttpAppOptions as RuiOptions,
+  HttpContext as Context,
+  HttpMiddleware as Middleware
+} from '../type'
 
 type HttpServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
 
-class HttpApp extends App<HttpRequest, HttpResponse> {
-  private option: HttpAppOptions
-
-  constructor (option?: HttpAppOptions) {
-    super(option)
-    this.option = option || {}
+class HttpApp extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
+  protected createServer (): Server {
+    return createServer(this.options, this.callback)
   }
 
-  listen = (...args: HttpServerListenParameters): Server => {
-    const server = createServer(this.option, this.callback)
-    server.listen(...args)
-    server.on('listening', this.executePlugins)
-    return server
+  listen (...args: HttpServerListenParameters): Server {
+    return super.listen(...args)
   }
 }
 
-export type { HttpRequest, HttpResponse, HttpAppOptions, HttpContext, Next, HttpMiddleware }
+export type { Next, RuiOptions, Context, Middleware }
 export default HttpApp
