@@ -90,8 +90,8 @@ describe('核心 App 类测试', () => {
       }).toThrow(RuiError)
     })
 
-    test('addMiddlewares 应该是 addMiddleware 的别名', () => {
-      expect(app.addMiddlewares).toBe(app.addMiddleware)
+    test('addMiddleware 应该是 addMiddleware 的别名', () => {
+      expect(app.addMiddleware).toBe(app.addMiddleware)
     })
   })
 
