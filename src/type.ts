@@ -3,10 +3,17 @@ import http from 'node:http'
 import http2 from 'node:http2'
 import https from 'node:https'
 
-export type HttpAppOptions = http.ServerOptions
-export type Http2AppOptions = http2.ServerOptions
-export type Http2sAppOptions = http2.SecureServerOptions
-export type HttpsAppOptions = https.ServerOptions
+interface GlobalConfig {
+  bodyLimit?: number;
+  timeout?: number;
+  encoding?: BufferEncoding;
+  trustProxy?: boolean;
+}
+
+export type HttpAppOptions = http.ServerOptions & Partial<GlobalConfig>
+export type Http2AppOptions = http2.ServerOptions & Partial<GlobalConfig>
+export type Http2sAppOptions = http2.SecureServerOptions & Partial<GlobalConfig>
+export type HttpsAppOptions = https.ServerOptions & Partial<GlobalConfig>
 export type AppOptions = HttpAppOptions | Http2AppOptions | Http2sAppOptions | HttpsAppOptions
 
 export type HttpRequest = http.IncomingMessage
@@ -99,11 +106,4 @@ export type RouteHandler<T extends CommonRequest, D extends CommonResponse> =
 
 export interface RouteFunction<T extends CommonRequest, D extends CommonResponse> {
   (path: string, ...middlewares: [...Middleware<T, D>[], RouteHandler<T, D>]): void;
-}
-
-export interface GlobalConfig {
-  bodyLimit?: number;
-  timeout?: number;
-  encoding?: BufferEncoding;
-  trustProxy?: boolean;
 }

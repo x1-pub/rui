@@ -14,8 +14,7 @@ import type {
   PluginOptions,
   HttpMethod,
   HookFunction,
-  ErrorHookFunction,
-  GlobalConfig
+  ErrorHookFunction
 } from '../type'
 import { RuiError } from '../error/index.js'
 
@@ -33,10 +32,10 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   }
 
   private plugins: [Plugin<this>, PluginOptions][] = []
-  protected options: AppOptions & Partial<GlobalConfig>
+  protected options: AppOptions
   public router: Omit<Router<T, D>, 'findRoute'>
 
-  constructor (options?: AppOptions & Partial<GlobalConfig>) {
+  constructor (options?: AppOptions) {
     this.context = Object.create(context) as Context<T, D>
     this.router = new Router<T, D>()
     this.options = {
@@ -99,7 +98,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
       try {
         await fn(this, options)
       } catch (error) {
-        console.error('Plugin execution failed:', error)
+        console.error('Plugin execution failed.')
         throw error
       }
     }
@@ -229,14 +228,6 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     }
     this.plugins.push([fn, options])
     return this
-  }
-
-  setConfig = (config: Partial<GlobalConfig>) => {
-    this.options = { ...this.options, ...config }
-  }
-
-  getConfig = (): GlobalConfig => {
-    return { ...this.options }
   }
 }
 
