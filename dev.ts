@@ -3,25 +3,26 @@ import Rui from './src/http/index.js'
 
 const rui = new Rui()
 
-// rui.addHook('onError', (ctx, err) => {
-//   console.log(err)
-//   ctx._responseData = 'have an error'
-// })
+rui.addHook('onError', (ctx, err) => {
+  // console.log(err)
+  ctx.send({ code: 999, message: '213123' })
+})
 
-rui.router.get('/', ctx => {
+rui.router.get('/', async ctx => {
   // ctx.res.setHeader('content-type', '1313123')
   // ctx.res.statusCode = 999
   // ctx._responseData = [1,2,false]
-  ctx.send('hhhhh').code(200)
+  // ctx.send('hhhhh').code(200)
+  throw new Error('1312')
 })
 
-rui.addMiddleware((ctx, next) => {
-  console.log(ctx.pathname)
-  next()
+rui.addMiddleware(async (ctx, next) => {
+  // console.log(ctx.pathname)
+  await next()
 })
-rui.addMiddleware((ctx, next) => {
-  console.log(ctx.ip)
-  next()
+rui.addMiddleware(async (ctx, next) => {
+  // console.log(ctx.ip)
+  await next()
 })
 
 // rui.addHook('onResponse', (ctx) => {

@@ -54,6 +54,7 @@ export interface Context<T extends CommonRequest, D extends CommonResponse> {
   text: (data: string) => this;
   code: (statusCode: number) => this;
   setHeader: (name: string, value: number | string | readonly string[]) => void;
+  removeHeader: (name: string) => void;
   setHeaders: (headers: Record<string, number | string | readonly string[]>) => void;
   setCookie: (name: string, val: string, options?: cookie.SerializeOptions) => void;
   getCookie: (name: string) => string | undefined;

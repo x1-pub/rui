@@ -84,10 +84,10 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
         index = i
 
         if (i === middlewares.length) {
-          return
+          return Promise.resolve()
         }
 
-        await middlewares[i](ctx, () => dispatch(i + 1))
+        await Promise.resolve(middlewares[i](ctx, () => dispatch(i + 1)))
       }
 
       return dispatch(0)
@@ -107,15 +107,15 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
 
   private setResponseValue = (ctx: Context<T, D>) => {
     const data = ReplyResolver.data(ctx)
-    ctx._responseData = data
-
     const status = ReplyResolver.status(ctx)
-    ctx.res.statusCode = status
-
     const contentType = ReplyResolver.contentType(ctx)
-    if (contentType) {
-      ctx.res.setHeader('content-type', contentType)
+
+    if (!contentType) {
+      ctx.removeHeader('content-type')
+    } else {
+      ctx.setHeader('content-type', contentType)
     }
+    ctx.send(data).code(status)
 
     return data
   }

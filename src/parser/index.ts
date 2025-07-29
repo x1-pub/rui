@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 import formidable from 'formidable'
 import url from 'node:url'
 import type { CommonRequest, CommonResponse, Context, RequestBody } from '../type'
-import { RuiError } from '../error'
+import { RuiError } from '../error/index.js'
 
 const defaultJsonTypes = [
   'application/json',

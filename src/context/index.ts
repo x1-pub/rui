@@ -1,12 +1,12 @@
 import cookie from 'cookie'
 import http from 'node:http'
 import type { TLSSocket } from 'node:tls'
-import type { HttpContext, Http2Context, ResponseData } from '../type'
+import type { HttpContext, Http2Context } from '../type'
 
 const context = {
-  _responseData: null as ResponseData,
+  _responseData: null,
 
-  get protocol (): 'http' | 'https' {
+  get protocol () {
     const forwardedProto = this.req.headers['x-forwarded-proto']
     if (forwardedProto) {
       return forwardedProto === 'https' ? 'https' : 'http'
@@ -16,7 +16,7 @@ const context = {
     return socket.encrypted ? 'https' : 'http'
   },
 
-  get host (): string {
+  get host () {
     const forwardedHost = this.req.headers['x-forwarded-host']
     const host = this.req.headers.host
 
@@ -29,7 +29,7 @@ const context = {
     return Array.isArray(result) ? result[0] : result
   },
 
-  code (statusCode: number) {
+  code (statusCode) {
     if (typeof statusCode === 'number' && Object.prototype.hasOwnProperty.call(http.STATUS_CODES, statusCode)) {
       this.res.statusCode = statusCode
       return this
@@ -39,12 +39,12 @@ const context = {
     return this
   },
 
-  send (chunk: ResponseData) {
+  send (chunk) {
     this._responseData = chunk
     return this
   },
 
-  setHeader (name: string, value: number | string | readonly string[]) {
+  setHeader (name, value) {
     if (typeof name !== 'string' || !name.trim()) {
       console.warn('The header name must be a non-empty string.')
       return
@@ -53,11 +53,15 @@ const context = {
     this.res.setHeader(name.trim().toLowerCase(), value)
   },
 
+  removeHeader (name) {
+    this.res.removeHeader(name)
+  },
+
   /**
    * The http2.Http2ServerResponse property does not exist,
    * so it calls setHeader in a loop.
    */
-  setHeaders (headers: Record<string, number | string | readonly string[]>) {
+  setHeaders (headers) {
     if (!headers || Object.prototype.toString.call(headers) !== '[object Object]') {
       console.warn('headers must be an object.')
       return
@@ -70,7 +74,7 @@ const context = {
     }
   },
 
-  setCookie (name: string, value: string, options?: cookie.SerializeOptions) {
+  setCookie (name, value, options) {
     if (typeof name !== 'string' || !name.trim()) {
       console.warn('The cookie name must be a non-null string.')
       return
@@ -102,7 +106,7 @@ const context = {
     this.setHeader('set-cookie', newCookies)
   },
 
-  getCookie (name: string): string | undefined {
+  getCookie (name) {
     if (typeof name !== 'string' || !name.trim()) {
       console.warn('The cookie name must be a non-null string.')
       return undefined
@@ -111,12 +115,12 @@ const context = {
     return this.getCookies()[name]
   },
 
-  getCookies (): Record<string, string | undefined> {
+  getCookies () {
     const cookieHeader = this.req.headers.cookie || ''
     return cookie.parse(Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader) || {}
   },
 
-  deleteCookie (name: string) {
+  deleteCookie (name) {
     if (typeof name !== 'string' || !name.trim()) {
       console.warn('The cookie name must be a non-null string.')
       return
@@ -162,7 +166,7 @@ const context = {
     this.send(null)
   },
 
-  get ip (): string {
+  get ip () {
     const forwarded = this.req.headers['x-forwarded-for']
     if (forwarded) {
       const ips = Array.isArray(forwarded) ? forwarded[0] : forwarded
@@ -187,13 +191,13 @@ const context = {
     return (Array.isArray(requestedWith) ? requestedWith[0] : requestedWith) === 'XMLHttpRequest'
   },
 
-  get acceptsJson (): boolean {
+  get acceptsJson () {
     const accept = this.req.headers.accept
     const acceptHeader = Array.isArray(accept) ? accept[0] : (accept || '')
     return acceptHeader.includes('application/json')
   },
 
-  get acceptsHtml (): boolean {
+  get acceptsHtml () {
     const accept = this.req.headers.accept
     const acceptHeader = Array.isArray(accept) ? accept[0] : (accept || '')
     return acceptHeader.includes('text/html')
