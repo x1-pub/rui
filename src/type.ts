@@ -41,6 +41,8 @@ export type ResponseData =
   | undefined
 
 export interface Context<T extends CommonRequest, D extends CommonResponse> {
+  _responseData: ResponseData;
+  _configs: AppOptions;
   req: T;
   res: D;
   protocol: 'http' | 'https';
@@ -54,7 +56,6 @@ export interface Context<T extends CommonRequest, D extends CommonResponse> {
   acceptsHtml: boolean;
   userAgent: boolean;
   isAjax: boolean;
-  _responseData: ResponseData;
   send: (chunk: ResponseData) => this;
   html: (data: string) => this;
   json: (data: object) => this;
@@ -69,6 +70,7 @@ export interface Context<T extends CommonRequest, D extends CommonResponse> {
   deleteCookie: (name: string) => void;
   clearCookie: () => void;
   redirect: (url: string, statusCode?: 301 | 302) => void;
+  getConfigs: () => AppOptions
 }
 
 export type HttpContext = Context<HttpRequest, HttpResponse>

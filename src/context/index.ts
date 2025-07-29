@@ -5,6 +5,7 @@ import type { HttpContext, Http2Context } from '../type'
 
 const context = {
   _responseData: null,
+  _configs: {},
 
   get protocol () {
     const forwardedProto = this.req.headers['x-forwarded-proto']
@@ -201,6 +202,10 @@ const context = {
     const accept = this.req.headers.accept
     const acceptHeader = Array.isArray(accept) ? accept[0] : (accept || '')
     return acceptHeader.includes('text/html')
+  },
+
+  getConfigs() {
+    return this._configs
   }
 } as HttpContext & Http2Context
 

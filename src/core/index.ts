@@ -37,6 +37,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
 
   constructor (options?: AppOptions) {
     this.context = Object.create(context) as Context<T, D>
+    this.context._configs = options || {}
     this.router = new Router<T, D>()
     this.options = {
       bodyLimit: 1024 * 1024,

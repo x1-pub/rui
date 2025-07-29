@@ -1,16 +1,20 @@
 import 'ts-node/register';
 import Rui from './src/http/index.js'
 
-const rui = new Rui()
+const rui = new Rui({
+  bodyLimit: 1024
+})
 
 rui.addPlugin(() => {
   // throw new Error('123')
 })
+
 rui.addHook('onError', (ctx, err) => {
   ctx.send({ code: 999, message: 'error' })
 })
 
 rui.router.get('/', async ctx => {
+  console.log(ctx.getConfigs())
   ctx.send('hhhhh')
 })
 
