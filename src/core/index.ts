@@ -135,7 +135,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     await this.executeHooks('onPreParsing', ctx)
 
     const { pathname, query, body } = await parser(ctx)
-    const method = (ctx.req.method || '').toLowerCase() as HttpMethod
+    const method = ctx.method
     const { params = {}, handler } = (this.router as Router<T, D>).findRoute(method, pathname)
 
     ctx.params = params

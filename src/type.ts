@@ -47,6 +47,7 @@ export interface Context<T extends CommonRequest, D extends CommonResponse> {
   res: D;
   protocol: 'http' | 'https';
   ip: string;
+  method: HttpMethod;
   pathname: string;
   query: Record<string, undefined | string | string[]>;
   host: string;

@@ -9,7 +9,7 @@ import type {
 } from '../type'
 import { RuiError } from '../error/index.js'
 
-const methods: HttpMethod[] = ['delete', 'get', 'head', 'patch', 'post', 'put', 'options']
+export const methods: HttpMethod[] = ['delete', 'get', 'head', 'patch', 'post', 'put', 'options']
 
 interface RouteNode<T extends CommonRequest, D extends CommonResponse> {
   handler?: RouteHandler<T, D>;
@@ -81,12 +81,36 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
 
   private validatePath (path: string): void {
     if (typeof path !== 'string') {
-      throw new RuiError('Route path must be a string', 500)
+      throw new RuiError(`Route '${path}' error, path must be a string`, 500)
     }
 
     if (!path.startsWith('/')) {
-      throw new RuiError('Route path must start with /', 500)
+      throw new RuiError(`Route '${path}' error, path must start with /`, 500)
     }
+
+    if (path === '/') {
+      return
+    }
+
+    const parameterNames: Record<string, boolean> = {}
+    path.slice(1).split('/').forEach(segment => {
+      if (!segment) {
+        throw new RuiError(`Route '${path}' error, there cannot be any space between two /`, 500)
+      }
+      
+      if (segment === ':') {
+        throw new RuiError(`Route '${path}' error, url parameter name cannot be empty`, 500)
+      }
+
+      if (segment.startsWith(':')) {
+        const name = segment.slice(1)
+        if (!parameterNames[name]) {
+          parameterNames[name] = true
+        } else {
+          throw new RuiError(`Route '${path}' error, conflicting parameter names ${name}`, 500)
+        }
+      }
+    })
   }
 
   private validateHandlers (args: any[]): void {
@@ -94,9 +118,9 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       throw new RuiError('Route must have at least one handler', 500)
     }
 
-    args.forEach((handler, index) => {
+    args.forEach((handler, idx) => {
       if (typeof handler !== 'function') {
-        throw new RuiError(`Handler at index ${index} must be a function`, 500)
+        throw new RuiError(`Routing ${idx === args.length - 1 ? 'handler' : 'middleware'} must be a function`, 500)
       }
     })
   }

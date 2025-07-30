@@ -7,6 +7,10 @@ const context = {
   _responseData: null,
   _configs: {},
 
+  get method () {
+    return this.req.method.toLowerCase()
+  },
+
   get protocol () {
     const forwardedProto = this.req.headers['x-forwarded-proto']
     if (forwardedProto) {

@@ -166,7 +166,7 @@ const parseUrl = (req: CommonRequest): { pathname: string; query: Record<string,
     }
 
     return {
-      pathname: pathname || '/',
+      pathname: pathname ? decodeURIComponent(pathname) : '/',
       query: queryObject
     }
   } catch (err) {
