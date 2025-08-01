@@ -16,7 +16,7 @@ class HttpsApp extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptio
     super(options)
 
     if (!options?.key || !options?.cert) {
-      console.warn('HTTPS secure server requires key and cert configuration')
+      console.warn('HTTP secure server requires key and cert configuration')
     }
   }
 

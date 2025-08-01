@@ -74,7 +74,9 @@ rui.addHook('onError', (ctx, err) => {
   ctx.send(err)
 })
 
-rui.listen(8888)
+rui.listen(8888, () => {
+  console.log('Rui HTTP server running at http://localhost:8888')
+})
 ```
 
 ## 许可
