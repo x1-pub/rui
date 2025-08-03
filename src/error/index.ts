@@ -9,3 +9,10 @@ export class RuiError extends Error {
     this.code = code
   }
 }
+
+export class ValidationError extends RuiError {
+  constructor (message: string) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}

@@ -12,7 +12,6 @@ import type {
   AddHook,
   Plugin,
   PluginOptions,
-  HttpMethod,
   HookFunction,
   ErrorHookFunction
 } from '../type'
@@ -172,7 +171,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     }
   }
 
-  protected callback = async (req: T, res: D): Promise<void> => {
+  callback = async (req: T, res: D): Promise<void> => {
     const ctx = Object.create(this.context) as Context<T, D>
     ctx.req = req
     ctx.res = res

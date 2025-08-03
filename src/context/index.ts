@@ -208,7 +208,7 @@ const context = {
     return acceptHeader.includes('text/html')
   },
 
-  getConfigs() {
+  getConfigs () {
     return this._configs
   }
 } as HttpContext & Http2Context

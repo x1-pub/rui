@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer'
 import formidable from 'formidable'
+import type { Files, Fields } from 'formidable'
 import url from 'node:url'
 import type { CommonRequest, CommonResponse, Context, RequestBody } from '../type'
 import { RuiError } from '../error/index.js'
@@ -128,7 +129,7 @@ const parseForm = async (req: CommonRequest, config: ParserConfig): Promise<Reco
   }
 }
 
-const parseMultipart = async (req: CommonRequest, config: ParserConfig): Promise<{ fields: any; files: any }> => {
+const parseMultipart = async (req: CommonRequest, config: ParserConfig): Promise<{ fields: Fields; files: Files }> => {
   try {
     const form = formidable({
       multiples: true,
@@ -142,10 +143,9 @@ const parseMultipart = async (req: CommonRequest, config: ParserConfig): Promise
 
     return { fields, files }
   } catch (err) {
-    const error = new Error('Invalid multipart data') as any
+    const error = new RuiError('Invalid multipart data')
     error.statusCode = 400
     error.code = 'INVALID_MULTIPART'
-    error.originalError = err
     throw error
   }
 }

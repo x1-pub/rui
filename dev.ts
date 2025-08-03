@@ -1,41 +1,29 @@
-import 'ts-node/register';
-import Rui from './src/http/index.js'
+import Rui, { validator } from './src/http/index.js'
+import type { ValidationRule } from './src/http/index.js'
 
 const rui = new Rui({
   bodyLimit: 1024
 })
 
-rui.addPlugin(() => {
-  // throw new Error('123')
-})
-
-rui.addHook('onError', (ctx, err) => {
-  console.log(err)
-  ctx.send({ code: 999, message: 'error' })
-})
-
-rui.router.get('/123/:a/:a', async ctx => {
-  console.log(ctx.getConfigs())
-  ctx.send('hhhhh')
-})
+const TestSchema: ValidationRule = {
+  type: 'object',
+  properties: {
+    id: {
+      type: 'string',
+      enum: ['1', '2', '3']
+    }
+  }
+}
 
 rui.router.get('/', async ctx => {
-  console.log(ctx.getConfigs())
+  const { data, valid, errors } = await validator(TestSchema).test(ctx.query)
+  console.log(data)
+  console.log(valid)
+  console.log(errors)
   ctx.send('hhhhh')
-})
-
-rui.router.get('/test/哈哈', async ctx => {
-  console.log(ctx.pathname)
-  ctx.send('hhhhhxx')
-})
-
-rui.addMiddleware(async (ctx, next) => {
-  console.log(ctx.ip)
-  await next()
 })
 
 rui.listen(8888, () => {
   console.log('http://localhost:8888')
   console.log(rui.getServerInfo())
 })
-

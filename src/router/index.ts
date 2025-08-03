@@ -97,7 +97,7 @@ class Router<T extends CommonRequest, D extends CommonResponse> {
       if (!segment) {
         throw new RuiError(`Route '${path}' error, there cannot be any space between two /`, 500)
       }
-      
+
       if (segment === ':') {
         throw new RuiError(`Route '${path}' error, url parameter name cannot be empty`, 500)
       }

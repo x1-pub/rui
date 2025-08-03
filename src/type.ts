@@ -1,4 +1,5 @@
 import cookie from 'cookie'
+import type { Fields, Files } from 'formidable';
 import http from 'node:http'
 import http2 from 'node:http2'
 import https from 'node:https'
@@ -24,11 +25,17 @@ export type HttpResponse = http.ServerResponse
 export type Http2Response = http2.Http2ServerResponse
 export type CommonResponse = HttpResponse | Http2Response
 
+type JsonPrimitive = string | number | boolean | null;
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+interface JsonArray extends Array<JsonValue> {}
+type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 export type RequestBody =
   | string
-  | Record<string, unknown>
+  | JsonValue
   | Buffer
-  | { fields: any; files: any }
+  | { fields: Fields; files: Files }
   | null
 
 export type ResponseData =

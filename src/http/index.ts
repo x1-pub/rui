@@ -1,5 +1,6 @@
 import { createServer, Server } from 'node:http'
 import ServerFactory from '../core/factory.js'
+import validator from '../validator/index.js'
 import type {
   HttpRequest,
   HttpResponse,
@@ -8,10 +9,11 @@ import type {
   HttpContext as Context,
   HttpMiddleware as Middleware
 } from '../type'
+import type { ValidationRule } from '../validator/index.js'
 
 type HttpServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
 
-class HttpApp extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
+class Rui extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
   protected createServer (): Server {
     return createServer(this.options, this.callback)
   }
@@ -21,5 +23,6 @@ class HttpApp extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOption
   }
 }
 
-export type { Next, RuiOptions, Context, Middleware }
-export default HttpApp
+export type { Next, RuiOptions, Context, Middleware, ValidationRule }
+export { validator }
+export default Rui
