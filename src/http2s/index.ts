@@ -10,8 +10,10 @@ import type {
   Http2Middleware as Middleware
 } from '../type'
 import type { ValidationRule } from '../validator/index.js'
+import type HttpRouter from '../router/index.js'
 
 type Http2sServerListenParameters = Parameters<ReturnType<typeof createSecureServer>['listen']>
+type Router = HttpRouter<Http2Request, Http2Response>
 
 class Rui extends ServerFactory<Http2Request, Http2Response, Http2SecureServer, RuiOptions> {
   constructor (options?: RuiOptions) {
@@ -31,6 +33,6 @@ class Rui extends ServerFactory<Http2Request, Http2Response, Http2SecureServer, 
   }
 }
 
-export type { Next, RuiOptions, Context, Middleware, ValidationRule }
+export type { Next, RuiOptions, Context, Middleware, ValidationRule, Router }
 export { validator }
 export default Rui

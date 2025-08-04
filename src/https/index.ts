@@ -10,8 +10,10 @@ import type {
   HttpMiddleware as Middleware
 } from '../type'
 import type { ValidationRule } from '../validator/index.js'
+import type HttpRouter from '../router/index.js'
 
 type HttpsServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
+type Router = HttpRouter<HttpRequest, HttpResponse>
 
 class Rui extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
   constructor (options?: RuiOptions) {
@@ -31,6 +33,6 @@ class Rui extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
   }
 }
 
-export type { Next, RuiOptions, Context, Middleware, ValidationRule }
+export type { Next, RuiOptions, Context, Middleware, ValidationRule, Router }
 export { validator }
 export default Rui
