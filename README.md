@@ -48,7 +48,7 @@ import Rui from '@x1.pub/rui' // equals: import Rui from '@x1.pub/rui/http'
 // import Rui from '@x1.pub/rui/http2s'
 // import Rui from '@x1.pub/rui/https'
 
-const rui = new Rui()
+const rui = Rui()
 
 rui.addMiddleware(async (ctx, next) => {
   console.log(`hi, ${ctx.pathname}`)

@@ -14,8 +14,9 @@ import type HttpRouter from '../router/index.js'
 
 type HttpServerListenParameters = Parameters<ReturnType<typeof createServer>['listen']>
 type Router = HttpRouter<HttpRequest, HttpResponse>
+interface RuiInstance extends HttpApp {}
 
-class Rui extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
+class HttpApp extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
   protected createServer (): Server {
     return createServer(this.options, this.callback)
   }
@@ -25,6 +26,10 @@ class Rui extends ServerFactory<HttpRequest, HttpResponse, Server, RuiOptions> {
   }
 }
 
-export type { Next, RuiOptions, Context, Middleware, ValidationRule, Router }
+const Rui = (options?: RuiOptions) => {
+  return new HttpApp(options) as RuiInstance
+}
+
+export type { Next, RuiOptions, Context, Middleware, ValidationRule, Router, RuiInstance }
 export { validator }
 export default Rui

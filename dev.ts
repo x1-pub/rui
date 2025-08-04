@@ -1,7 +1,7 @@
 import Rui, { validator } from './src/http/index.js'
 import type { ValidationRule } from './src/http/index.js'
 
-const rui = new Rui({
+const rui = Rui({
   bodyLimit: 1024
 })
 
