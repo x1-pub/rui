@@ -51,7 +51,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     const hooks = this.hooks[name]
     if (!hooks.length) return
 
-    const results = await Promise.allSettled(
+    await Promise.all(
       hooks.map(async (fn) => {
         try {
           if (name === 'onError' && err) {
@@ -65,11 +65,6 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
         }
       })
     )
-
-    const failures = results.filter(result => result.status === 'rejected')
-    if (failures.length > 0) {
-      console.warn(`${failures.length} hooks failed in ${name}`)
-    }
   }
 
   private compose = (middlewares: Middleware<T, D>[]): ((ctx: Context<T, D>) => Promise<void>) => {
@@ -121,10 +116,10 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
 
   private send = async (ctx: Context<T, D>): Promise<void> => {
     await this.executeHooks('onPreSerialization', ctx)
-    const data = this.setResponseValue(ctx)
+    this.setResponseValue(ctx)
     await this.executeHooks('onPreResponse', ctx)
-    if (ctx.res.writable && !ctx.res.writableEnded && data) {
-      ctx.res.end(data)
+    if (ctx.res.writable && !ctx.res.writableEnded && ctx._responseData) {
+      ctx.res.end(ctx._responseData as any)
     } else {
       ctx.res.end()
     }
