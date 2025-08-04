@@ -81,8 +81,8 @@ export interface Context<T extends CommonRequest, D extends CommonResponse> {
   getConfigs: () => AppOptions
 }
 
-export type HttpContext = Context<HttpRequest, HttpResponse>
-export type Http2Context = Context<Http2Request, Http2Response>
+export interface HttpContext extends Context<HttpRequest, HttpResponse> {}
+export interface Http2Context extends Context<Http2Request, Http2Response> {}
 
 export type Next = () => Promise<void>
 export interface Middleware<T extends CommonRequest, D extends CommonResponse> {
