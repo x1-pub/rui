@@ -172,11 +172,11 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     ctx.res = res
 
     const timeout = setTimeout(() => {
-      if (!res.writableEnded) {
+      if (res.writable && !res.writableEnded) {
         res.statusCode = 408
         res.end('Request Timeout')
       }
-    }, this.options.timeout)
+    }, this.options.timeout || 120000)
 
     ctx.res.on('finish', async () => {
       clearTimeout(timeout)
