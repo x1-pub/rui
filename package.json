@@ -1,6 +1,6 @@
 {
   "name": "@x1.pub/rui",
-  "version": "0.0.29",
+  "version": "0.0.30",
   "description": "Rui is a TypeScript-based Node.js server-side framework",
   "type": "module",
   "types": "dist/http.d.ts",
