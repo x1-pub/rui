@@ -1,4 +1,4 @@
-import { ValidationError } from "../error";
+import { ValidationError } from "../error/index.js";
 
 /**
  * ge <= gt < NUMBER < lt <= le

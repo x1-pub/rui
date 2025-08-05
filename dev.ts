@@ -1,4 +1,4 @@
-import Rui, { Validator } from './src/http/index.js'
+import Rui, { Validator, ValidationError } from './src/http/index.js'
 import type { ValidationRule } from './src/http/index.js'
 
 const rui = Rui({
@@ -8,19 +8,43 @@ const rui = Rui({
 const TestSchema: ValidationRule = {
   type: 'object',
   properties: {
-    id: {
+    name: {
       type: 'string',
-      enum: ['1', '2', '3']
-    }
+      le: 30,
+      ge: 1,
+    },
+    nameCn: {
+      type: 'string',
+      le: 30,
+      ge: 1,
+    },
+    description: {
+      type: 'string',
+      le: 200,
+    },
   }
 }
 
 rui.router.get('/', async ctx => {
-  const { data, valid, errors } = await new Validator(TestSchema).test(ctx.query)
-  console.log(data)
-  console.log(valid)
-  console.log(errors)
+  const query = await new Validator(TestSchema).valid(ctx.query)
+  console.log(query)
   ctx.send('hhhhh')
+})
+
+rui.addHook('onError', (ctx, err) => {
+  if (err instanceof ValidationError) {
+    const firstInfo = err.info[0]
+    ctx.json({
+      code: 400,
+      message: `${firstInfo.field} ${firstInfo.message}`
+    })
+    return
+  }
+
+  ctx.json({
+    code: 500,
+    message: err.message || 'Internal Server Error'
+  })
 })
 
 rui.listen(8888, () => {
