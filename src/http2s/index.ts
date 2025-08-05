@@ -1,6 +1,6 @@
 import { createSecureServer, Http2SecureServer } from 'node:http2'
 import ServerFactory from '../core/factory.js'
-import validator from '../validator/index.js'
+import Validator from '../validator/index.js'
 import type {
   Http2Request,
   Http2Response,
@@ -39,5 +39,5 @@ const Rui = (options?: RuiOptions) => {
 }
 
 export type { Next, RuiOptions, Context, Middleware, ValidationRule, Router, RuiInstance }
-export { validator }
+export { Validator }
 export default Rui

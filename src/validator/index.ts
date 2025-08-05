@@ -249,8 +249,4 @@ class Validator {
   }
 }
 
-function validator (schema: ValidationRule) {
-  return new Validator(schema)
-}
-
-export default validator
+export default Validator
