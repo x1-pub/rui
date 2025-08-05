@@ -26,7 +26,7 @@ const TestSchema: ValidationRule = {
 }
 
 rui.router.get('/', async ctx => {
-  const query = await new Validator(TestSchema).valid(ctx.query)
+  const query = await new Validator(TestSchema).valid(null)
   console.log(query)
   ctx.send('hhhhh')
 })

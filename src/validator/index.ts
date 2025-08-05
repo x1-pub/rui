@@ -96,6 +96,10 @@ class Validator {
   }
 
   private validate = async <T>(data: T, schema: ValidationRule, field: string, errors: ValidationErrorInfo[]): Promise<T> => {
+    if (['object', 'array'].includes(schema.type)) {
+      schema.required = schema.required ?? true
+    }
+
     if (data === undefined || data === null) {
       if (schema.required) {
         errors.push({ field, message: 'is required' })
