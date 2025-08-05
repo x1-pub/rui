@@ -32,6 +32,10 @@
 
 无论是快速开发小型项目，还是构建复杂的企业级应用，Rui 都能为你提供高效、可靠的技术支撑。
 
+<p align="center">
+  <img src="https://github.com/x1-pub/rui/raw/main/docs/architecture.png" alt="Rui's architecture diagram"/>
+</p>
+
 ## 安装
 
 ```shell

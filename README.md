@@ -32,6 +32,10 @@ Adhering to the design concept of `Ready to Use Out of the Box`, the framework c
 
 Whether you're rapidly developing a small project or building a complex enterprise-level application, Rui can provide you with efficient and reliable technical support.
 
+<p align="center">
+  <img src="https://github.com/x1-pub/rui/raw/main/docs/architecture.png" alt="Rui's architecture diagram"/>
+</p>
+
 ## Installation
 
 ```shell
