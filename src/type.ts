@@ -91,7 +91,7 @@ export interface Middleware<T extends CommonRequest, D extends CommonResponse> {
 export type HttpMiddleware = Middleware<HttpRequest, HttpResponse>
 export type Http2Middleware = Middleware<Http2Request, Http2Response>
 
-export type HookType = 'onRequest' | 'onPreParsing' | 'onPreHandler' | 'onPreSerialization' | 'onPreResponse' | 'onResponse' | 'onError'
+export type HookType = 'onRequest' | 'onPostParsing' | 'onPreHandler' | 'onPreSerialization' | 'onPreResponse' | 'onResponse' | 'onError'
 export type HookFunction<T extends CommonRequest, D extends CommonResponse> =
   (ctx: Context<T, D>) => Promise<void> | void
 export type ErrorHookFunction<T extends CommonRequest, D extends CommonResponse> =

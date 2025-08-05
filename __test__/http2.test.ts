@@ -435,7 +435,7 @@ describe('HTTP/2 应用测试', () => {
     test('应该支持各种 Hook', () => {
       const hooks = {
         onRequest: jest.fn(),
-        onPreParsing: jest.fn(),
+        onPostParsing: jest.fn(),
         onPreHandler: jest.fn(),
         onPreSerialization: jest.fn(),
         onPreResponse: jest.fn(),

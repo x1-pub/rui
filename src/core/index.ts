@@ -13,7 +13,8 @@ import type {
   Plugin,
   PluginOptions,
   HookFunction,
-  ErrorHookFunction
+  ErrorHookFunction,
+  Next
 } from '../type'
 import { RuiError } from '../error/index.js'
 
@@ -22,7 +23,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   private middlewares: Middleware<T, D>[] = []
   private hooks: Record<HookType, (HookFunction<T, D> | ErrorHookFunction<T, D>)[]> = {
     onRequest: [],
-    onPreParsing: [],
+    onPostParsing: [],
     onPreHandler: [],
     onPreSerialization: [],
     onPreResponse: [],
@@ -34,7 +35,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   protected options: AppOptions
   public router: Omit<Router<T, D>, 'findRoute'>
 
-  constructor (options?: AppOptions) {
+  constructor(options?: AppOptions) {
     this.context = Object.create(context) as Context<T, D>
     this.context._configs = options || {}
     this.router = new Router<T, D>()
@@ -125,18 +126,18 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     }
   }
 
-  private handleRequest = async (ctx: Context<T, D>): Promise<void> => {
-    await this.executeHooks('onPreParsing', ctx)
-
+  private handleRequest = async (ctx: Context<T, D>, next: Next): Promise<void> => {
     const { pathname, query, body } = await parser(ctx)
     const method = ctx.method
     const { params = {}, handler } = (this.router as Router<T, D>).findRoute(method, pathname)
-
+    
     ctx.params = params
     ctx.pathname = pathname
     ctx.query = query
     ctx.body = body
-
+    
+    await this.executeHooks('onPostParsing', ctx)
+    await next()
     await this.executeHooks('onPreHandler', ctx)
 
     if (handler) {
@@ -147,7 +148,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   }
 
   private executeMiddlewares = async (ctx: Context<T, D>): Promise<void> => {
-    const composedMiddleware = this.compose([...this.middlewares, this.handleRequest])
+    const composedMiddleware = this.compose([this.handleRequest, ...this.middlewares])
     await composedMiddleware(ctx)
   }
 
