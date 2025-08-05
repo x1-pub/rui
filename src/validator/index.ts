@@ -1,3 +1,5 @@
+import { ValidationError } from "../error";
+
 /**
  * ge <= gt < NUMBER < lt <= le
  * ge <= gt < STRING.length < lt <= le
@@ -47,7 +49,7 @@ interface AnyTypeRule extends BasicRule<any> {
   type: 'any';
 }
 
-interface ValidationError {
+export interface ValidationErrorInfo {
   field: string;
   message: string;
 }
@@ -55,7 +57,7 @@ interface ValidationError {
 interface ValidationResult<T> {
   valid: boolean;
   data: T;
-  errors: ValidationError[];
+  errors: ValidationErrorInfo[];
 }
 
 export type ValidationRule =
@@ -73,8 +75,8 @@ class Validator {
     this.schema = schema
   }
 
-  async test<T> (data: T): Promise<ValidationResult<T>> {
-    const errors: ValidationError[] = []
+  async test<T = any> (data: any): Promise<ValidationResult<T>> {
+    const errors: ValidationErrorInfo[] = []
     const result = await this.validate<T>(data, this.schema, '', errors)
     return {
       valid: errors.length === 0,
@@ -83,7 +85,17 @@ class Validator {
     }
   }
 
-  private validate = async <T>(data: T, schema: ValidationRule, field: string, errors: ValidationError[]): Promise<T> => {
+  async valid<T = any> (data: any): Promise<T> {
+    const errors: ValidationErrorInfo[] = []
+    const result = await this.validate<T>(data, this.schema, '', errors)
+    if (errors.length !== 0) {
+      throw new ValidationError(errors)
+    }
+
+    return result
+  }
+
+  private validate = async <T>(data: T, schema: ValidationRule, field: string, errors: ValidationErrorInfo[]): Promise<T> => {
     if (data === undefined || data === null) {
       if (schema.required) {
         errors.push({ field, message: 'is required' })

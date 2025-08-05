@@ -1,6 +1,7 @@
 import { createServer, Server } from 'node:http'
 import ServerFactory from '../core/factory.js'
 import Validator from '../validator/index.js'
+import { RuiError, ValidationError } from '../error/index.js'
 import type {
   HttpRequest,
   HttpResponse,
@@ -31,5 +32,5 @@ const Rui = (options?: RuiOptions) => {
 }
 
 export type { Next, RuiOptions, Context, Middleware, ValidationRule, Router, RuiInstance }
-export { Validator }
+export { Validator, RuiError, ValidationError }
 export default Rui

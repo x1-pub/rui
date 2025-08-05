@@ -1,4 +1,4 @@
-import Rui, { validator } from './src/http/index.js'
+import Rui, { Validator } from './src/http/index.js'
 import type { ValidationRule } from './src/http/index.js'
 
 const rui = Rui({
@@ -16,7 +16,7 @@ const TestSchema: ValidationRule = {
 }
 
 rui.router.get('/', async ctx => {
-  const { data, valid, errors } = await validator(TestSchema).test(ctx.query)
+  const { data, valid, errors } = await new Validator(TestSchema).test(ctx.query)
   console.log(data)
   console.log(valid)
   console.log(errors)

@@ -1,3 +1,5 @@
+import { ValidationErrorInfo } from "../validator"
+
 export class RuiError extends Error {
   public statusCode: number
   public code?: string
@@ -11,8 +13,13 @@ export class RuiError extends Error {
 }
 
 export class ValidationError extends RuiError {
-  constructor (message: string) {
-    super(message)
+  public info: ValidationErrorInfo[]
+
+  constructor (info: ValidationErrorInfo[]) {
+    super('The verification request parameters failed')
     this.name = 'ValidationError'
+    this.statusCode = 400
+    this.code = 'PARAMETER_TYPE_ERROR'
+    this.info = info
   }
 }
