@@ -93,7 +93,8 @@ const context = {
     const cookieString = cookie.serialize(name, value, {
       httpOnly: true,
       secure: this.protocol === 'https',
-      sameSite: 'lax',
+      sameSite: false,
+      path: '/',
       ...options
     })
 
