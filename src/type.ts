@@ -64,6 +64,7 @@ export interface Context<T extends CommonRequest, D extends CommonResponse> {
   acceptsHtml: boolean;
   userAgent: boolean;
   isAjax: boolean;
+  handler?: RouteHandler<T, D>
   send: (chunk: ResponseData) => this;
   html: (data: string) => this;
   json: (data: object) => this;

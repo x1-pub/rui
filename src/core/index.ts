@@ -126,29 +126,33 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     }
   }
 
-  private handleRequest = async (ctx: Context<T, D>, next: Next): Promise<void> => {
+  private handleRequest = async (ctx: Context<T, D>): Promise<void> => {
+    await this.executeHooks('onPreHandler', ctx)
+
+    if (ctx.handler) {
+      await ctx.handler(ctx)
+    } else {
+      throw new RuiError(`Cannot ${ctx.method.toUpperCase()} ${ctx.pathname}`, 404, 'ROUTE_NOT_FOUND')
+    }
+  }
+
+  private handleParsing = async (ctx: Context<T, D>, next: Next): Promise<void> => {
     const { pathname, query, body } = await parser(ctx)
     const method = ctx.method
     const { params = {}, handler } = (this.router as Router<T, D>).findRoute(method, pathname)
-    
+
     ctx.params = params
     ctx.pathname = pathname
     ctx.query = query
     ctx.body = body
-    
+    ctx.handler = handler
+
     await this.executeHooks('onPostParsing', ctx)
     await next()
-    await this.executeHooks('onPreHandler', ctx)
-
-    if (handler) {
-      await handler(ctx)
-    } else {
-      throw new RuiError(`Cannot ${method.toUpperCase()} ${pathname}`, 404, 'ROUTE_NOT_FOUND')
-    }
   }
 
   private executeMiddlewares = async (ctx: Context<T, D>): Promise<void> => {
-    const composedMiddleware = this.compose([this.handleRequest, ...this.middlewares])
+    const composedMiddleware = this.compose([this.handleParsing, ...this.middlewares, this.handleRequest])
     await composedMiddleware(ctx)
   }
 
