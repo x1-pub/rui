@@ -3,6 +3,7 @@ import type { Fields, Files } from 'formidable';
 import http from 'node:http'
 import http2 from 'node:http2'
 import https from 'node:https'
+import { CorsOptions } from './cors';
 
 interface GlobalConfig {
   bodyLimit?: number;
@@ -11,10 +12,10 @@ interface GlobalConfig {
   trustProxy?: boolean;
 }
 
-export type HttpAppOptions = http.ServerOptions & Partial<GlobalConfig>
-export type Http2AppOptions = http2.ServerOptions & Partial<GlobalConfig>
-export type Http2sAppOptions = http2.SecureServerOptions & Partial<GlobalConfig>
-export type HttpsAppOptions = https.ServerOptions & Partial<GlobalConfig>
+export type HttpAppOptions = http.ServerOptions & Partial<GlobalConfig> & Partial<{ cors: CorsOptions }>
+export type Http2AppOptions = http2.ServerOptions & Partial<GlobalConfig> & Partial<{ cors: CorsOptions }>
+export type Http2sAppOptions = http2.SecureServerOptions & Partial<GlobalConfig> & Partial<{ cors: CorsOptions }>
+export type HttpsAppOptions = https.ServerOptions & Partial<GlobalConfig> & Partial<{ cors: CorsOptions }>
 export type AppOptions = HttpAppOptions | Http2AppOptions | Http2sAppOptions | HttpsAppOptions
 
 export type HttpRequest = http.IncomingMessage

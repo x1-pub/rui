@@ -17,6 +17,7 @@ import type {
   Next
 } from '../type'
 import { RuiError } from '../error/index.js'
+import cors from '../cors/index.js'
 
 abstract class App<T extends CommonRequest, D extends CommonResponse> {
   private context: Context<T, D>
@@ -35,7 +36,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
   protected options: AppOptions
   public router: Omit<Router<T, D>, 'findRoute'>
 
-  constructor(options?: AppOptions) {
+  constructor (options?: AppOptions) {
     this.context = Object.create(context) as Context<T, D>
     this.context._configs = options || {}
     this.router = new Router<T, D>()
@@ -148,6 +149,7 @@ abstract class App<T extends CommonRequest, D extends CommonResponse> {
     ctx.handler = handler
 
     await this.executeHooks('onPostParsing', ctx)
+    await cors(ctx, this.options.cors)
     await next()
   }
 

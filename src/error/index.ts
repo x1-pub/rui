@@ -1,4 +1,4 @@
-import { ValidationErrorInfo } from "../validator"
+import { ValidationErrorInfo } from '../validator'
 
 export class RuiError extends Error {
   public statusCode: number
